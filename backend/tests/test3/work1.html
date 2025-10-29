@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fairy-Stockfish Анализатор</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: #2c3e50;
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.8;
+            font-size: 1.1em;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .input-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 1.1em;
+        }
+
+        .fen-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            font-family: monospace;
+            transition: border-color 0.3s ease;
+        }
+
+        .fen-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        button {
+            flex: 1;
+            padding: 15px 25px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #ecf0f1;
+            color: #2c3e50;
+        }
+
+        .btn-secondary:hover {
+            background: #dde4e6;
+            transform: translateY(-2px);
+        }
+
+        .result-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            border-left: 4px solid #667eea;
+        }
+
+        .result-section h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .result-section h3::before {
+            content: "⚡";
+            font-size: 1.2em;
+        }
+
+        #result {
+            font-family: monospace;
+            font-size: 16px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .examples {
+            background: #e8f4f8;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 25px;
+        }
+
+        .examples h4 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .examples h4::before {
+            content: "🎯";
+        }
+
+        .example-fen {
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            border: 1px solid #e0e0e0;
+            transition: all 0.3s ease;
+            font-family: monospace;
+            font-size: 14px;
+        }
+
+        .example-fen:hover {
+            background: #667eea;
+            color: white;
+            transform: translateX(5px);
+        }
+
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .fen-info {
+            font-size: 0.9em;
+            color: #7f8c8d;
+            margin-top: 5px;
+            font-style: italic;
+        }
+
+        @media (max-width: 600px) {
+            .button-group {
+                flex-direction: column;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🐉 Fairy-Stockfish Анализатор</h1>
+            <p>Анализ позиций для шахмат с драконами</p>
+        </div>
+
+        <div class="content">
+            <div class="input-group">
+                <label for="fenInput">FEN позиция:</label>
+                <input 
+                    type="text" 
+                    id="fenInput" 
+                    class="fen-input" 
+                    placeholder="Введите FEN строку..."
+                    value="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR[DDdd] w KQkq - 0 1"
+                >
+                <div class="fen-info">
+                    Формат: позиция фигур [активные фигуры] чей ход рокировки взятие на проходе счетчик ходов
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button class="btn-primary" onclick="analyzePosition()">
+                    🧠 Анализировать позицию
+                </button>
+                <button class="btn-secondary" onclick="clearResults()">
+                    🗑️ Очистить
+                </button>
+            </div>
+
+            <div id="status"></div>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Анализируем позицию... Это может занять несколько секунд</p>
+            </div>
+
+            <div class="result-section">
+                <h3>Результат анализа:</h3>
+                <div id="result">
+                    Результат появится здесь после анализа...
+                </div>
+            </div>
+
+            <div class="examples">
+                <h4>Примеры позиций для тестирования:</h4>
+                <div class="example-fen" onclick="setFen(this.textContent)">
+                    rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR[DDdd] w KQkq - 0 1
+                </div>
+                <div class="example-fen" onclick="setFen(this.textContent)">
+                    rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR[DDdd] w KQkq e6 0 2
+                </div>
+                <div class="example-fen" onclick="setFen(this.textContent)">
+                    r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPPDPPP/RNBQKB1R[Ddd] w KQkq - 2 3
+                </div>
+                <div class="example-fen" onclick="setFen(this.textContent)">
+                    rnbqkbnr/pppppppp/8/8/3Pd3/8/PPP1PPPP/RNBQKBNR[Dd] b KQkq d3 0 1
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Функция для установки FEN из примеров
+        function setFen(fen) {
+            document.getElementById('fenInput').value = fen;
+            showStatus('FEN позиция установлена!', 'success');
+        }
+
+        // Функция очистки результатов
+        function clearResults() {
+            document.getElementById('result').textContent = 'Результат появится здесь после анализа...';
+            document.getElementById('status').innerHTML = '';
+            document.getElementById('fenInput').value = '';
+        }
+
+        // Функция показа статуса
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
+            setTimeout(() => {
+                statusDiv.innerHTML = '';
+            }, 3000);
+        }
+
+        // Основная функция анализа позиции
+        async function analyzePosition() {
+            const fenInput = document.getElementById('fenInput').value.trim();
+            const resultDiv = document.getElementById('result');
+            const loadingDiv = document.getElementById('loading');
+
+            if (!fenInput) {
+                showStatus('Пожалуйста, введите FEN позицию', 'error');
+                return;
+            }
+
+            // Показываем загрузку
+            loadingDiv.style.display = 'block';
+            resultDiv.textContent = 'Выполняется анализ...';
+
+            try {
+                // Используем предоставленную функцию
+                const bestMove = await getBestMove(fenInput);
+                
+                // Скрываем загрузку
+                loadingDiv.style.display = 'none';
+                
+                if (bestMove) {
+                    resultDiv.innerHTML = `
+<strong>Лучший ход:</strong> <span style="color: #27ae60; font-weight: bold; font-size: 1.2em;">${bestMove}</span>
+
+<strong>Исходная позиция:</strong> ${fenInput}
+
+<strong>Анализ завершен:</strong> Движок рекомендует ${bestMove}
+
+📊 <em>Глубина анализа: 5 полуходов</em>
+                    `;
+                    showStatus('Анализ успешно завершен!', 'success');
+                } else {
+                    resultDiv.textContent = 'Не удалось получить лучший ход. Проверьте FEN и подключение к серверу.';
+                    showStatus('Ошибка при анализе', 'error');
+                }
+            } catch (error) {
+                loadingDiv.style.display = 'none';
+                resultDiv.textContent = `Ошибка: ${error.message}\n\nУбедитесь, что:\n1. Сервер запущен на localhost:3000\n2. FEN позиция корректна\n3. Движок Fairy-Stockfish настроен правильно`;
+                showStatus('Произошла ошибка при анализе', 'error');
+                console.error('Analysis error:', error);
+            }
+        }
+
+        // Предоставленная функция для отправки запроса
+        async function getBestMove(currentFen) {
+            try {
+                const response = await fetch('http://localhost:3000/get-best-move', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        fen: currentFen,
+                        depth: 5 
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                return result.bestMove;
+            } catch (error) {
+                console.error('Error getting best move:', error);
+                throw error;
+            }
+        }
+
+        // Обработка нажатия Enter в поле ввода
+        document.getElementById('fenInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                analyzePosition();
+            }
+        });
+
+        // Показываем подсказку при загрузке
+        document.addEventListener('DOMContentLoaded', function() {
+            showStatus('Готов к работе! Введите FEN или выберите пример', 'success');
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,3 @@
+rem curl -X POST http://localhost:3000/get-best-move -H "Content-Type: application/json" -d "{\"fen\":\"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR[DDdd] w KQkq - 0 1\",\"depth\":10}"
+rem curl -X POST http://localhost:3000/get-best-move -H "Content-Type: application/json" -d "{\"fen\":\"rnbqkbnr/pppppppp/8/8/8/8/PPPPDPPP/RNBQKBNR[Ddd] w KQkq - 0 1\",\"depth\":10}"
+curl -X POST http://localhost:3000/get-best-move -H "Content-Type: application/json"  -d "{\"fen\":\"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR[DDdd] w KQkq - 0 1\",\"depth\":10}"

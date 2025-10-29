@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Шахматный дракон - Fairy-Stockfish UCI</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>🐉 Шахматный дракон</h1>
+        <p class="subtitle">Powered by Fairy-Stockfish UCI Engine</p>
+
+        <div class="controls">
+            <button id="new-game-btn" class="btn">Новая игра</button>
+            <button id="swap-sides-btn" class="btn">Смена цвета</button>
+
+            <div class="difficulty-selector">
+                <label for="difficulty">Сложность:</label>
+                <select id="difficulty">
+                    <option value="1">Уровень 1 (глубина 1)</option>
+                    <option value="2">Уровень 2 (глубина 2)</option>
+                    <option value="3">Уровень 3 (глубина 3)</option>
+                    <option value="4" selected>Уровень 4 (глубина 4)</option>
+                    <option value="5">Уровень 5 (глубина 5)</option>
+                    <option value="6">Уровень 6 (глубина 6)</option>
+                    <option value="7">Уровень 7 (глубина 7)</option>
+                </select>
+            </div>
+        </div>
+
+        <div id="status" class="status">Загрузка...</div>
+
+        <div id="engine-thinking" class="engine-status">
+            <span class="spinner">⏳</span>
+            <span id="engine-status-text">Думает...</span>
+            <div id="search-info" class="search-info"></div>
+        </div>
+
+        <div class="game-area">
+            <div id="evaluation-container" class="evaluation-container">
+                <div id="evaluation-bar-wrapper" class="eval-bar-wrapper">
+                    <div id="evaluation-bar" class="eval-bar">
+                        <div id="evaluation-fill" class="eval-fill"></div>
+                    </div>
+                </div>
+                <div id="evaluation-text" class="eval-text">0.0</div>
+            </div>
+
+            <div class="board-section">
+                <div id="black-pocket-container" class="pocket-container">
+                    <span class="pocket-label">Резерв чёрных:</span>
+                    <span id="black-pocket" class="pocket">♠♠</span>
+                </div>
+
+                <div class="board-wrapper">
+                    <div id="rank-labels" class="rank-labels"></div>
+                    <div id="board" class="board"></div>
+                    <div id="file-labels" class="file-labels"></div>
+                </div>
+
+                <div id="white-pocket-container" class="pocket-container">
+                    <span class="pocket-label">Резерв белых:</span>
+                    <span id="white-pocket" class="pocket">♤♤</span>
+                </div>
+            </div>
+
+            <div id="move-history-container" class="move-history-container">
+                <h3>История ходов</h3>
+                <div id="moves-list" class="moves-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/ffish-es6@0.7.8/ffish.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

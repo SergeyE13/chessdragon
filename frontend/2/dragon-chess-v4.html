@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Шахматный Дракон</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 30px;
+            align-items: start;
+        }
+
+        .game-board {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .board-container {
+            position: relative;
+            margin: 20px 0;
+        }
+
+        .coordinates {
+            position: absolute;
+            color: #666;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .file-labels {
+            bottom: -20px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 15px;
+        }
+
+        .rank-labels {
+            top: 0;
+            bottom: 0;
+            left: -20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+        }
+
+        #board {
+            display: grid;
+            grid-template-columns: repeat(8, 60px);
+            grid-template-rows: repeat(8, 60px);
+            border: 2px solid #2c3e50;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .square {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .square.light {
+            background-color: #f0d9b5;
+        }
+
+        .square.dark {
+            background-color: #b58863;
+        }
+
+        .square.selected {
+            background-color: #f7dc6f !important;
+        }
+
+        .square.last-move {
+            box-shadow: inset 0 0 0 3px rgba(255, 193, 7, 0.8);
+        }
+
+        .square.legal-move::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border: 3px solid rgba(52, 152, 219, 0.9);
+            box-sizing: border-box;
+            pointer-events: none;
+        }
+
+        .square.legal-move.has-piece::after {
+            border: 3px solid rgba(231, 76, 60, 0.9);
+        }
+
+        .square.dragon-drop::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border: 3px solid rgba(155, 89, 182, 0.9);
+            box-sizing: border-box;
+            pointer-events: none;
+            background: rgba(155, 89, 182, 0.2);
+        }
+
+        .piece {
+            font-size: 50px;
+            line-height: 1;
+            text-shadow: 0 0 2px rgba(0,0,0,0.3);
+            z-index: 1;
+        }
+
+        .controls {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            width: 280px;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-group h3 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            background: #3498db;
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-bottom: 8px;
+        }
+
+        button:hover {
+            background: #2980b9;
+            transform: translateY(-1px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ecf0f1;
+            border-radius: 8px;
+            background: white;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .status-display {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        #status {
+            font-size: 16px;
+            font-weight: 600;
+            color: #2c3e50;
+            padding: 10px;
+            border-radius: 8px;
+            background: #ecf0f1;
+            margin-bottom: 10px;
+        }
+
+        .pockets {
+            display: flex;
+            justify-content: space-between;
+            margin: 15px 0;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            gap: 20px;
+        }
+
+        .pocket {
+            text-align: center;
+            flex: 1;
+        }
+
+        .pocket-label {
+            display: none;
+        }
+
+        .pocket-pieces {
+            font-size: 36px;
+            min-height: 45px;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+
+        .pocket-pieces:hover {
+            background-color: #e9ecef;
+        }
+
+        .pocket-pieces.selected {
+            background-color: #9b59b6;
+            color: white;
+        }
+
+        .evaluation {
+            margin: 15px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .evaluation h3 {
+            color: #2c3e50;
+            margin-bottom: 12px;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .evaluation-bar-container {
+            position: relative;
+            width: 100%;
+            height: 30px;
+            border-radius: 15px;
+            overflow: hidden;
+            border: 2px solid #7f8c8d;
+            transition: background 0.3s ease;
+        }
+
+        .evaluation-fill {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            transition: all 0.3s ease;
+            z-index: 1;
+        }
+
+        .evaluation-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 5px;
+            font-size: 11px;
+            color: #7f8c8d;
+        }
+
+        .evaluation-text {
+            text-align: center;
+            font-weight: 700;
+            margin-top: 8px;
+            font-size: 18px;
+        }
+
+        .evaluation-text.positive {
+            color: #27ae60;
+        }
+
+        .evaluation-text.negative {
+            color: #e74c3c;
+        }
+
+        .evaluation-text.neutral {
+            color: #7f8c8d;
+        }
+
+        .engine-thinking {
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            text-align: center;
+            padding: 10px;
+            background: #fff3cd;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .engine-thinking.active {
+            opacity: 1;
+        }
+
+        .move-history {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            width: 280px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .move-history h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .move-list {
+            font-family: monospace;
+            font-size: 14px;
+            line-height: 1.8;
+        }
+
+        .move-pair {
+            display: flex;
+            margin-bottom: 5px;
+        }
+
+        .move-number {
+            width: 30px;
+            color: #666;
+            font-weight: bold;
+        }
+
+        .move {
+            flex: 1;
+            margin-right: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .controls, .move-history {
+                width: 100%;
+                max-width: 480px;
+                margin: 0 auto;
+            }
+            
+            #board {
+                grid-template-columns: repeat(8, 45px);
+                grid-template-rows: repeat(8, 45px);
+            }
+            
+            .piece {
+                font-size: 38px;
+            }
+
+            .pocket-pieces {
+                font-size: 28px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="controls">
+            <div class="control-group">
+                <button onclick="newGame()">Новая игра</button>
+                <button onclick="flipBoard()">Сменить цвет</button>
+                <button onclick="undoMove()">Отменить ход</button>
+            </div>
+            
+            <div class="control-group">
+                <h3>Уровень</h3>
+                <select id="difficulty" onchange="setDifficulty(this.value)">
+                    <option value="1">Уровень 1 (800)</option>
+                    <option value="2">Уровень 2 (1000)</option>
+                    <option value="3">Уровень 3 (1200)</option>
+                    <option value="4" selected>Уровень 4 (1400)</option>
+                    <option value="5">Уровень 5 (1600)</option>
+                    <option value="6">Уровень 6 (1800)</option>
+                    <option value="7">Уровень 7 (2000)</option>
+                </select>
+            </div>
+
+            <div class="evaluation">
+                <h3>Оценка позиции</h3>
+                <div class="evaluation-bar-container" id="evaluation-bar-container">
+                    <div class="evaluation-fill" id="evaluation-fill"></div>
+                </div>
+                <div class="evaluation-labels">
+                    <span id="player-label">Вы</span>
+                    <span id="computer-label">Компьютер</span>
+                </div>
+                <div class="evaluation-text neutral" id="evaluation-text">0.0</div>
+            </div>
+
+            <div id="engine-thinking" class="engine-thinking">
+                <div style="font-weight: bold; margin-bottom: 5px;">🤔 Компьютер думает...</div>
+                <div id="search-info" style="font-size: 12px; color: #666;"></div>
+            </div>
+        </div>
+
+        <div class="game-board">
+            <div class="status-display">
+                <div id="status">Загрузка...</div>
+            </div>
+
+            <div class="pockets">
+                <div class="pocket">
+                    <div class="pocket-label">Белые драконы</div>
+                    <div class="pocket-pieces" id="white-pocket" data-color="white" onclick="selectDragon('white')">—</div>
+                </div>
+                <div class="pocket">
+                    <div class="pocket-label">Чёрные драконы</div>
+                    <div class="pocket-pieces" id="black-pocket" data-color="black" onclick="selectDragon('black')">—</div>
+                </div>
+            </div>
+
+            <div class="board-container">
+                <div class="coordinates file-labels" id="file-labels"></div>
+                <div class="coordinates rank-labels" id="rank-labels"></div>
+                <div id="board"></div>
+            </div>
+        </div>
+
+        <div class="move-history">
+            <h3>История ходов</h3>
+            <div class="move-list" id="move-history"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        const API_URL = 'http://localhost:3000';
+        let board = null;
+        let ffish = null;
+        let gameReady = false;
+        let playerColor = 'white';
+        let boardFlipped = false;
+        let lastMoveSquares = { from: null, to: null };
+        let selectedSquare = null;
+        let selectedDragon = null;
+        let currentDifficulty = 4;
+        let whiteDragons = 2;
+        let blackDragons = 2;
+        let moveHistory = [];
+
+        const difficultySettings = {
+            1: { depth: 1 },
+            2: { depth: 2 },
+            3: { depth: 3 },
+            4: { depth: 4 },
+            5: { depth: 5 },
+            6: { depth: 6 },
+            7: { depth: 7 }
+        };
+
+        function safeBoardCall(callback, defaultValue = null) {
+            try {
+                if (!board || !gameReady) return defaultValue;
+                return callback();
+            } catch (error) {
+                console.error('Board error:', error);
+                if (error.message && error.message.includes('memory access')) {
+                    console.warn('Memory error detected, reinitializing...');
+                    setTimeout(() => initGame(), 100);
+                }
+                return defaultValue;
+            }
+        }
+
+        async function initGame() {
+            try {
+                gameReady = false;
+                
+                if (board) {
+                    try {
+                        board.delete();
+                    } catch (e) {
+                        console.warn('Could not delete old board:', e);
+                    }
+                }
+                
+                if (!ffish) {
+                    const Module = await import('https://cdn.jsdelivr.net/npm/ffish-es6@0.7.8/ffish.js');
+                    ffish = await Module.default({ 
+                        locateFile: (file) => `https://cdn.jsdelivr.net/npm/ffish-es6@0.7.8/${file}` 
+                    });
+                    
+                    const variantConfig = `
+[Chess_dragon:chess]
+dragon = d
+customPiece1 = d:DA
+startFen = rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR[DDdd] w KQkq - 0 1
+pieceDrops = true
+dropPieceTypes = d
+pocketSize = 2
+whiteDropRegion = *1, *2
+blackDropRegion = *7, *8
+promotionPieceTypes = nbrqd
+pieceValue = d:500
+`;
+                    ffish.loadVariantConfig(variantConfig);
+                }
+                
+                board = new ffish.Board('Chess_dragon');
+                whiteDragons = 2;
+                blackDragons = 2;
+                lastMoveSquares = { from: null, to: null };
+                selectedSquare = null;
+                selectedDragon = null;
+                moveHistory = [];
+                
+                gameReady = true;
+                
+                updateBoard();
+                updatePockets();
+                updateEvaluation();
+                updateStatus();
+                updateCoordinates();
+                
+                // ИСПРАВЛЕНИЕ: Если игрок играет чёрными, компьютер должен сделать первый ход
+                if (playerColor === 'black') {
+                    setTimeout(() => makeComputerMove(), 500);
+                }
+                
+            } catch (error) {
+                console.error('Init error:', error);
+                document.getElementById('status').textContent = 'Ошибка: ' + error.message;
+                gameReady = false;
+            }
+        }
+
+        async function getBestMoveFromEngine(fen, depth) {
+            try {
+                const response = await fetch(`${API_URL}/get-best-move`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ fen, depth })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                const data = await response.json();
+                return { move: data.bestMove, info: null };
+            } catch (error) {
+                console.error('getBestMoveFromEngine error:', error);
+                throw error;
+            }
+        }
+
+        function makePlayerMove(move) {
+            if (!gameReady) return;
+            
+            const fenBefore = safeBoardCall(() => board.fen(), '');
+            const from = move.includes('@') ? null : move.substring(0, 2);
+            const to = move.includes('@') ? move.substring(2) : move.substring(2, 4);
+            
+            moveHistory.push({
+                fen: fenBefore,
+                whiteDragons: whiteDragons,
+                blackDragons: blackDragons,
+                lastMoveSquares: { ...lastMoveSquares }
+            });
+            
+            const success = safeBoardCall(() => {
+                board.push(move);
+                return true;
+            }, false);
+            
+            if (!success) {
+                console.error('Failed to make move:', move);
+                moveHistory.pop();
+                return;
+            }
+            
+            if (move.startsWith('D@')) whiteDragons--;
+            else if (move.startsWith('d@')) blackDragons--;
+            
+            lastMoveSquares = { from, to };
+            selectedSquare = null;
+            selectedDragon = null;
+            
+            updateBoard();
+            updatePockets();
+            updateEvaluation();
+            
+            const notation = formatMoveNotation(move, fenBefore);
+            addToMoveHistory(notation, getMoveNumber(), 'white');
+            updateStatus();
+            
+            const isOver = safeBoardCall(() => board.isGameOver(), false);
+            if (isOver) {
+                handleGameEnd();
+                return;
+            }
+            
+            setTimeout(() => makeComputerMove(), 300);
+        }
+
+        async function makeComputerMove() {
+            if (!gameReady) return;
+            
+            const currentTurn = safeBoardCall(() => board.turn(), true);
+            const isComputerTurn = (playerColor === 'white' && !currentTurn) || (playerColor === 'black' && currentTurn);
+            
+            const isOver = safeBoardCall(() => board.isGameOver(), false);
+            if (!isComputerTurn || isOver) return;
+            
+            const thinkingDiv = document.getElementById('engine-thinking');
+            const searchInfo = document.getElementById('search-info');
+            thinkingDiv.classList.add('active');
+            updateStatus();
+            
+            try {
+                const fen = safeBoardCall(() => board.fen());
+                if (!fen) {
+                    throw new Error('Could not get FEN');
+                }
+                
+                const depth = difficultySettings[currentDifficulty].depth;
+                const startTime = Date.now();
+                const result = await getBestMoveFromEngine(fen, depth);
+                const elapsed = Date.now() - startTime;
+                
+                if (result.info) {
+                    searchInfo.innerHTML = `Глубина: ${result.info.depth || depth} | Узлов: ${(result.info.nodes || 0).toLocaleString('ru-RU')} | Оценка: ${((result.info.score || 0) / 100).toFixed(2)}`;
+                } else {
+                    searchInfo.innerHTML = `Глубина: ${depth} | Время: ${(elapsed / 1000).toFixed(1)}с`;
+                }
+                
+                const move = result.move;
+                const fenBefore = safeBoardCall(() => board.fen(), '');
+                const from = move.includes('@') ? null : move.substring(0, 2);
+                const to = move.includes('@') ? move.substring(2) : move.substring(2, 4);
+                
+                moveHistory.push({
+                    fen: fenBefore,
+                    whiteDragons: whiteDragons,
+                    blackDragons: blackDragons,
+                    lastMoveSquares: { ...lastMoveSquares }
+                });
+                
+                const success = safeBoardCall(() => {
+                    board.push(move);
+                    return true;
+                }, false);
+                
+                if (!success) {
+                    throw new Error('Failed to execute move: ' + move);
+                }
+                
+                if (move.startsWith('D@')) whiteDragons--;
+                else if (move.startsWith('d@')) blackDragons--;
+                
+                lastMoveSquares = { from, to };
+                
+                updateBoard();
+                updatePockets();
+                updateEvaluation();
+                
+                const notation = formatMoveNotation(move, fenBefore);
+                addToMoveHistory(notation, getMoveNumber(), 'black');
+                
+                setTimeout(() => {
+                    thinkingDiv.classList.remove('active');
+                }, 800);
+                
+                updateStatus();
+                
+                const isGameOver = safeBoardCall(() => board.isGameOver(), false);
+                if (isGameOver) handleGameEnd();
+                
+            } catch (error) {
+                console.error('Engine error:', error);
+                document.getElementById('status').textContent = 'Ошибка движка: ' + error.message;
+                thinkingDiv.classList.remove('active');
+            }
+        }
+
+        function updateBoard() {
+            const boardDiv = document.getElementById('board');
+            if (!boardDiv) return;
+            
+            boardDiv.innerHTML = '';
+            
+            const fen = safeBoardCall(() => board.fen());
+            if (!fen) {
+                console.error('Cannot get FEN');
+                return;
+            }
+            
+            if (!boardFlipped) {
+                for (let rank = 8; rank >= 1; rank--) {
+                    for (let file = 0; file < 8; file++) {
+                        const fileChar = String.fromCharCode(97 + file);
+                        const square = fileChar + rank;
+                        createSquare(square, fen);
+                    }
+                }
+            } else {
+                for (let rank = 1; rank <= 8; rank++) {
+                    for (let file = 7; file >= 0; file--) {
+                        const fileChar = String.fromCharCode(97 + file);
+                        const square = fileChar + rank;
+                        createSquare(square, fen);
+                    }
+                }
+            }
+            
+            highlightLastMove();
+            
+            if (selectedDragon) {
+                highlightDragonDrops();
+            }
+        }
+
+        function createSquare(square, fen) {
+            const squareDiv = document.createElement('div');
+            const file = square.charCodeAt(0) - 'a'.charCodeAt(0);
+            const rank = parseInt(square[1]) - 1;
+            const isLight = (file + rank) % 2 === 0;
+            
+            squareDiv.className = `square ${isLight ? 'light' : 'dark'}`;
+            squareDiv.dataset.square = square;
+            
+            const piece = getPieceAtSquare(fen, square);
+            if (piece) {
+                const pieceSpan = document.createElement('span');
+                pieceSpan.className = 'piece';
+                pieceSpan.textContent = getPieceSymbol(piece);
+                squareDiv.appendChild(pieceSpan);
+            }
+            
+            squareDiv.addEventListener('click', () => handleSquareClick(square));
+            document.getElementById('board').appendChild(squareDiv);
+        }
+
+        function handleSquareClick(square) {
+            if (!gameReady) return;
+            
+            const currentTurn = safeBoardCall(() => board.turn(), true);
+            const isPlayerTurn = (playerColor === 'white' && currentTurn) || (playerColor === 'black' && !currentTurn);
+            
+            if (!isPlayerTurn) return;
+            
+            const legalMovesStr = safeBoardCall(() => board.legalMoves(), '');
+            const legalMoves = legalMovesStr.split(' ').filter(m => m);
+            
+            if (selectedSquare) {
+                const move = selectedSquare + square;
+                if (legalMoves.includes(move)) {
+                    makePlayerMove(move);
+                    return;
+                }
+                
+                const promotions = ['q', 'r', 'b', 'n', 'd'];
+                for (let promo of promotions) {
+                    if (legalMoves.includes(move + promo)) {
+                        showPromotionDialog(move);
+                        return;
+                    }
+                }
+            }
+            
+            if (selectedDragon) {
+                const dragonLetter = selectedDragon === 'white' ? 'D' : 'd';
+                const dropMove = dragonLetter + '@' + square;
+                if (legalMoves.includes(dropMove)) {
+                    makePlayerMove(dropMove);
+                    return;
+                }
+            }
+            
+            const fen = safeBoardCall(() => board.fen(), '');
+            const piece = getPieceAtSquare(fen, square);
+            if (piece && ((playerColor === 'white' && piece === piece.toUpperCase()) || (playerColor === 'black' && piece === piece.toLowerCase()))) {
+                selectedSquare = square;
+                selectedDragon = null;
+                updateBoard();
+                highlightLegalMoves(square);
+            }
+        }
+
+        function highlightLegalMoves(fromSquare) {
+            const legalMovesStr = safeBoardCall(() => board.legalMoves(), '');
+            const legalMoves = legalMovesStr.split(' ').filter(m => m);
+            const movesFromSquare = legalMoves.filter(m => m.startsWith(fromSquare));
+            
+            movesFromSquare.forEach(move => {
+                const to = move.substring(2, 4);
+                const squareEl = document.querySelector(`[data-square="${to}"]`);
+                if (squareEl) {
+                    squareEl.classList.add('legal-move');
+                    const fen = safeBoardCall(() => board.fen(), '');
+                    const hasPiece = getPieceAtSquare(fen, to) !== null;
+                    if (hasPiece) squareEl.classList.add('has-piece');
+                }
+            });
+        }
+
+        function highlightDragonDrops() {
+            const legalMovesStr = safeBoardCall(() => board.legalMoves(), '');
+            const legalMoves = legalMovesStr.split(' ').filter(m => m);
+            const dragonLetter = selectedDragon === 'white' ? 'D' : 'd';
+            const dragonMoves = legalMoves.filter(m => m.startsWith(dragonLetter + '@'));
+            
+            dragonMoves.forEach(move => {
+                const square = move.substring(2);
+                const squareEl = document.querySelector(`[data-square="${square}"]`);
+                if (squareEl) {
+                    squareEl.classList.add('dragon-drop');
+                }
+            });
+        }
+
+        function highlightLastMove() {
+            if (lastMoveSquares.from) {
+                const fromEl = document.querySelector(`[data-square="${lastMoveSquares.from}"]`);
+                if (fromEl) fromEl.classList.add('last-move');
+            }
+            if (lastMoveSquares.to) {
+                const toEl = document.querySelector(`[data-square="${lastMoveSquares.to}"]`);
+                if (toEl) toEl.classList.add('last-move');
+            }
+        }
+
+        function updatePockets() {
+            const whiteP = document.getElementById('white-pocket');
+            const blackP = document.getElementById('black-pocket');
+            if (whiteP) whiteP.textContent = '♤'.repeat(whiteDragons) || '—';
+            if (blackP) blackP.textContent = '♠'.repeat(blackDragons) || '—';
+        }
+
+        // ИСПРАВЛЕННАЯ логика оценки позиции
+        function updateEvaluation() {
+            const fen = safeBoardCall(() => board.fen());
+            if (!fen) return;
+            
+            const boardStr = fen.split(' ')[0].split('[')[0];
+            let score = 0;
+            const values = {'P':100,'N':320,'B':330,'R':500,'Q':900,'D':500,'p':-100,'n':-320,'b':-330,'r':-500,'q':-900,'d':-500};
+            
+            for (let char of boardStr) {
+                if (values[char]) score += values[char];
+            }
+            
+            const playerScore = playerColor === 'white' ? score : -score;
+            
+            const evalText = document.getElementById('evaluation-text');
+            const evalFill = document.getElementById('evaluation-fill');
+            const barContainer = document.getElementById('evaluation-bar-container');
+            
+            if (evalText && evalFill && barContainer) {
+                const displayScore = (playerScore / 100).toFixed(1);
+                evalText.textContent = playerScore > 0 ? `+${displayScore}` : displayScore;
+                evalText.classList.remove('positive', 'negative', 'neutral');
+                
+                if (playerScore > 50) {
+                    evalText.classList.add('positive');
+                } else if (playerScore < -50) {
+                    evalText.classList.add('negative');
+                } else {
+                    evalText.classList.add('neutral');
+                }
+                
+                const maxScore = 2000;
+                const clampedScore = Math.max(-maxScore, Math.min(maxScore, playerScore));
+                const percentage = ((clampedScore / maxScore) + 1) * 50;
+                
+                // ИСПРАВЛЕННАЯ ЛОГИКА ШКАЛЫ:
+                // Игрок слева, компьютер справа
+                // При преимуществе игрока - заливка растёт вправо от 0
+                // При преимуществе компьютера - заливка растёт влево от 100%
+                
+                if (playerColor === 'white') {
+                    // Белые слева (светлый), чёрные справа (серый)
+                    barContainer.style.background = 'linear-gradient(to right, #ecf0f1 50%, #95a5a6 50%)';
+                } else {
+                    // Чёрные слева (тёмный), белые справа (светлый)
+                    barContainer.style.background = 'linear-gradient(to right, #34495e 50%, #ecf0f1 50%)';
+                }
+                
+                // Заливка от 0 до percentage
+                evalFill.style.left = '0';
+                evalFill.style.width = `${percentage}%`;
+                
+                // Цвет заливки в зависимости от преимущества
+                if (playerScore > 50) {
+                    evalFill.style.background = 'linear-gradient(to right, #2ecc71, #27ae60)';
+                } else if (playerScore < -50) {
+                    evalFill.style.background = 'linear-gradient(to right, #e74c3c, #c0392b)';
+                } else {
+                    evalFill.style.background = 'linear-gradient(to right, #3498db, #2980b9)';
+                }
+            }
+        }
+
+        function updateStatus() {
+            const statusDiv = document.getElementById('status');
+            if (!statusDiv) return;
+            
+            if (!gameReady) {
+                statusDiv.textContent = 'Загрузка...';
+                return;
+            }
+            
+            const turn = safeBoardCall(() => board.turn(), true);
+            const isPlayerTurn = (playerColor === 'white' && turn) || (playerColor === 'black' && !turn);
+            const colorName = playerColor === 'white' ? 'белые' : 'чёрные';
+            
+            const isOver = safeBoardCall(() => board.isGameOver(), false);
+            const isCheck = safeBoardCall(() => board.isCheck(), false);
+            
+            if (isOver) {
+                if (isCheck) {
+                    const winner = turn ? 'чёрные' : 'белые';
+                    statusDiv.textContent = `Мат! Победили ${winner}`;
+                } else {
+                    statusDiv.textContent = 'Пат - ничья';
+                }
+            } else if (isCheck) {
+                statusDiv.textContent = 'Шах!';
+            } else if (isPlayerTurn) {
+                statusDiv.textContent = `Ваш ход (${colorName})`;
+            } else {
+                statusDiv.textContent = 'Ход компьютера...';
+            }
+        }
+
+        function updateCoordinates() {
+            const fileLabels = boardFlipped ? ['h','g','f','e','d','c','b','a'] : ['a','b','c','d','e','f','g','h'];
+            const rankLabels = boardFlipped ? ['1','2','3','4','5','6','7','8'] : ['8','7','6','5','4','3','2','1'];
+            
+            const fileLabelsDiv = document.getElementById('file-labels');
+            const rankLabelsDiv = document.getElementById('rank-labels');
+            
+            if (fileLabelsDiv) {
+                fileLabelsDiv.innerHTML = fileLabels.map(f => `<span>${f}</span>`).join('');
+            }
+            if (rankLabelsDiv) {
+                rankLabelsDiv.innerHTML = rankLabels.map(r => `<span>${r}</span>`).join('');
+            }
+        }
+
+        function getPieceAtSquare(fen, square) {
+            const parts = fen.split(' ');
+            const position = parts[0].split('[')[0];
+            const ranks = position.split('/');
+            
+            const file = square.charCodeAt(0) - 'a'.charCodeAt(0);
+            const rank = 8 - parseInt(square[1]);
+            
+            if (rank < 0 || rank >= 8) return null;
+            
+            let fileIndex = 0;
+            for (let char of ranks[rank]) {
+                if (char >= '1' && char <= '8') {
+                    fileIndex += parseInt(char);
+                } else {
+                    if (fileIndex === file) return char;
+                    fileIndex++;
+                }
+            }
+            return null;
+        }
+
+        function getPieceSymbol(piece) {
+            const symbols = {
+                'P': '♙', 'N': '♘', 'B': '♗', 'R': '♖', 'Q': '♕', 'K': '♔', 'D': '♤',
+                'p': '♟', 'n': '♞', 'b': '♝', 'r': '♜', 'q': '♛', 'k': '♚', 'd': '♠'
+            };
+            return symbols[piece] || piece;
+        }
+
+        function formatMoveNotation(move, fenBefore) {
+            if (move.includes('@')) {
+                const piece = move[0] === 'D' ? '♤' : '♠';
+                const square = move.substring(2);
+                return `${piece}@${square}`;
+            }
+            
+            const from = move.substring(0, 2);
+            const to = move.substring(2, 4);
+            const piece = getPieceAtSquare(fenBefore, from);
+            const symbol = piece ? getPieceSymbol(piece) : '';
+            
+            return `${symbol}${from}-${to}`;
+        }
+
+        function getMoveNumber() {
+            const fen = safeBoardCall(() => board.fen(), '');
+            if (!fen) return 1;
+            const parts = fen.split(' ');
+            return parseInt(parts[parts.length - 1]) || 1;
+        }
+
+        let moveHistoryData = [];
+
+        function addToMoveHistory(notation, moveNum, color) {
+            if (color === 'white') {
+                moveHistoryData.push({ number: moveNum, white: notation, black: '' });
+            } else {
+                if (moveHistoryData.length > 0) {
+                    moveHistoryData[moveHistoryData.length - 1].black = notation;
+                }
+            }
+            renderMoveHistory();
+        }
+
+        function renderMoveHistory() {
+            const historyDiv = document.getElementById('move-history');
+            if (!historyDiv) return;
+            
+            historyDiv.innerHTML = moveHistoryData.map(m => 
+                `<div class="move-pair">
+                    <span class="move-number">${m.number}.</span>
+                    <span class="move">${m.white}</span>
+                    <span class="move">${m.black}</span>
+                </div>`
+            ).join('');
+        }
+
+        function handleGameEnd() {
+            setTimeout(() => {
+                const turn = safeBoardCall(() => board.turn(), true);
+                const isCheck = safeBoardCall(() => board.isCheck(), false);
+                
+                if (isCheck) {
+                    const winner = turn ? 'Чёрные' : 'Белые';
+                    alert(`Мат! ${winner} победили!`);
+                } else {
+                    alert('Пат! Ничья.');
+                }
+            }, 500);
+        }
+
+        function showPromotionDialog(movePrefix) {
+            makePlayerMove(movePrefix + 'q');
+        }
+
+        function selectDragon(color) {
+            if (!gameReady) return;
+            
+            const turn = safeBoardCall(() => board.turn(), true);
+            const isPlayerTurn = (playerColor === 'white' && turn) || (playerColor === 'black' && !turn);
+            
+            if (!isPlayerTurn) return;
+            if (color === 'white' && whiteDragons === 0) return;
+            if (color === 'black' && blackDragons === 0) return;
+            if ((color === 'white' && playerColor !== 'white') || (color === 'black' && playerColor !== 'black')) return;
+            
+            if (selectedDragon === color) {
+                selectedDragon = null;
+                document.querySelectorAll('.pocket-pieces').forEach(p => p.classList.remove('selected'));
+            } else {
+                selectedDragon = color;
+                selectedSquare = null;
+                document.querySelectorAll('.pocket-pieces').forEach(p => p.classList.remove('selected'));
+                document.getElementById(`${color}-pocket`).classList.add('selected');
+            }
+            
+            updateBoard();
+        }
+
+        window.newGame = function() {
+            moveHistoryData = [];
+            initGame();
+        };
+
+        window.flipBoard = function() {
+            playerColor = playerColor === 'white' ? 'black' : 'white';
+            boardFlipped = !boardFlipped;
+            updateBoard();
+            updateCoordinates();
+            updateEvaluation();
+            updateStatus();
+            
+            const turn = safeBoardCall(() => board.turn(), true);
+            const isComputerTurn = (playerColor === 'white' && !turn) || (playerColor === 'black' && turn);
+            
+            if (isComputerTurn) {
+                setTimeout(() => makeComputerMove(), 300);
+            }
+        };
+
+        window.undoMove = function() {
+            if (moveHistory.length === 0) {
+                alert('Нечего отменять!');
+                return;
+            }
+            
+            const lastState = moveHistory.pop();
+            
+            try {
+                board.delete();
+                board = new ffish.Board('Chess_dragon', lastState.fen);
+                whiteDragons = lastState.whiteDragons;
+                blackDragons = lastState.blackDragons;
+                lastMoveSquares = lastState.lastMoveSquares;
+                
+                if (moveHistoryData.length > 0) {
+                    const lastMove = moveHistoryData[moveHistoryData.length - 1];
+                    if (lastMove.black) {
+                        lastMove.black = '';
+                    } else {
+                        moveHistoryData.pop();
+                    }
+                }
+                
+                updateBoard();
+                updatePockets();
+                updateEvaluation();
+                updateStatus();
+                renderMoveHistory();
+            } catch (error) {
+                console.error('Undo error:', error);
+                alert('Ошибка при отмене хода');
+            }
+        };
+
+        window.setDifficulty = function(level) {
+            currentDifficulty = parseInt(level);
+        };
+
+        window.selectDragon = selectDragon;
+
+        document.addEventListener('DOMContentLoaded', initGame);
+    </script>
+</body>
+</html>

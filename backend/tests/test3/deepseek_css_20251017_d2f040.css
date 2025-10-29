@@ -1,0 +1,163 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 20px;
+    color: #333;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+h1 {
+    color: white;
+    margin-bottom: 30px;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+.controls {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    margin-bottom: 30px;
+    display: inline-block;
+}
+
+.input-group {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 15px;
+    gap: 10px;
+}
+
+label {
+    font-weight: 600;
+    min-width: 120px;
+    text-align: right;
+}
+
+input {
+    padding: 8px 12px;
+    border: 2px solid #ddd;
+    border-radius: 5px;
+    width: 80px;
+    font-size: 16px;
+    text-align: center;
+}
+
+input:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+button {
+    padding: 10px 20px;
+    margin: 5px;
+    border: none;
+    border-radius: 5px;
+    background: #667eea;
+    color: white;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+button:hover {
+    background: #5a6fd8;
+}
+
+button:active {
+    transform: translateY(1px);
+}
+
+/* Стили для изометрической коробки */
+.iso-box {
+    position: relative;
+    width: 1px;
+    height: 1px;
+    margin: 100px auto;
+    transform: rotateX(60deg) rotateZ(-45deg);
+    transform-style: preserve-3d;
+    transition: all 0.5s ease;
+}
+
+.face {
+    position: absolute;
+    top: 0;
+    left: 0;
+    background-color: #d4b78c;
+    border: 2px solid #a05c15;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+.top {
+    width: var(--width, 150px);
+    height: var(--depth, 80px);
+    transform: rotateX(90deg) translateZ(calc(var(--height, 100px) / 2));
+    background: linear-gradient(45deg, #d4b78c, #e8d4b2);
+}
+
+.left {
+    width: var(--height, 100px);
+    height: var(--depth, 80px);
+    transform: rotateY(-90deg) translateZ(calc(var(--width, 150px) / 2));
+    background: linear-gradient(45deg, #c9ab7a, #d4b78c);
+}
+
+.right {
+    width: var(--width, 150px);
+    height: var(--height, 100px);
+    transform: translateZ(calc(var(--depth, 80px) / 2));
+    background: linear-gradient(45deg, #e8d4b2, #c9ab7a);
+}
+
+.url-info {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    margin-top: 30px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+code {
+    display: block;
+    background: #f8f9fa;
+    padding: 10px;
+    border-radius: 5px;
+    margin: 10px 0;
+    font-family: 'Courier New', monospace;
+    color: #e83e8c;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .controls {
+        padding: 15px;
+    }
+    
+    .input-group {
+        flex-direction: column;
+        gap: 5px;
+    }
+    
+    label {
+        text-align: center;
+        min-width: auto;
+    }
+    
+    .iso-box {
+        margin: 50px auto;
+        transform: rotateX(60deg) rotateZ(-45deg) scale(0.8);
+    }
+}
