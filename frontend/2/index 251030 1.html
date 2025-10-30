@@ -15,7 +15,7 @@
             font-family: 'Segoe UI', system-ui, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            padding: 20px;
+            padding: 5px;
         }
 
         .container {
@@ -23,14 +23,14 @@
             margin: 0 auto;
             display: grid;
             grid-template-columns: 1fr auto 1fr;
-            gap: 30px;
+            gap: 10px;
             align-items: start;
         }
 
         .game-board {
             background: white;
             border-radius: 15px;
-            padding: 20px;
+            padding: 10px;
             box-shadow: 0 20px 40px rgba(0,0,0,0.1);
             display: flex;
             flex-direction: column;
@@ -39,7 +39,7 @@
 
         .board-container {
             position: relative;
-            margin: 20px 0;
+            margin: 10px 0;
         }
 
         .coordinates {
@@ -138,7 +138,7 @@
         .controls {
             background: white;
             border-radius: 15px;
-            padding: 20px;
+            padding: 10px;
             box-shadow: 0 20px 40px rgba(0,0,0,0.1);
             width: 280px;
         }
@@ -204,11 +204,11 @@
         .pockets {
             display: flex;
             justify-content: space-between;
-            margin: 15px 0;
-            padding: 10px;
+            margin: 8px 0;
+            padding: 8px;
             background: #f8f9fa;
             border-radius: 8px;
-            gap: 20px;
+            gap: 10px;
         }
 
         .pocket {
@@ -239,8 +239,8 @@
         }
 
         .evaluation {
-            margin: 15px 0;
-            padding: 15px;
+            margin: 8px 0;
+            padding: 10px;
             background: #f8f9fa;
             border-radius: 8px;
         }
@@ -320,7 +320,7 @@
         .move-history {
             background: white;
             border-radius: 15px;
-            padding: 20px;
+            padding: 10px;
             box-shadow: 0 20px 40px rgba(0,0,0,0.1);
             width: 280px;
             max-height: 400px;
@@ -356,16 +356,21 @@
         }
 
         @media (max-width: 768px) {
-            .container {
+			.container {
                 grid-template-columns: 1fr;
-                gap: 20px;
-            }
+				gap: 5px;
+			}
             
             .controls, .move-history {
                 width: 100%;
+				padding: 8px;
                 max-width: 480px;
                 margin: 0 auto;
             }
+
+			.game-board {
+				padding: 8px;
+			}
             
             #board {
                 grid-template-columns: repeat(8, 45px);
@@ -376,9 +381,28 @@
                 font-size: 38px;
             }
 
+			.pockets {
+				margin: 5px 0;
+				padding: 5px;
+			}
+
             .pocket-pieces {
                 font-size: 28px;
             }
+
+			.evaluation {
+				margin: 5px 0;
+				padding: 8px;
+			}
+
+			body {
+				padding: 3px;
+			}
+			
+			button {
+				padding: 10px;
+				margin-bottom: 6px;
+			}			
         }
     </style>
 </head>
@@ -453,7 +477,10 @@
     </div>
 
     <script type="module">
-        const API_URL = 'http://localhost:3000';
+	//const API_URL = 'https://chessdragon.onrender.com';
+        //const API_URL = 'http://localhost:3000';
+	//const API_URL = `http://${window.location.hostname}:3000`;
+	const API_URL = `http://gofra.ddns.net:3000`;
         let board = null;
         let ffish = null;
         let gameReady = false;
@@ -600,8 +627,13 @@ pieceValue = d:500
                 return;
             }
             
-            if (move.startsWith('D@')) whiteDragons--;
-            else if (move.startsWith('d@')) blackDragons--;
+			if (move.startsWith('D@')) {
+				if (currentTurn) {
+					whiteDragons--;  // Белые ходили
+				} else {
+					blackDragons--;  // Чёрные ходили
+				}
+			}
             
             lastMoveSquares = { from, to };
             selectedSquare = null;
@@ -678,8 +710,13 @@ pieceValue = d:500
                     throw new Error('Failed to execute move: ' + move);
                 }
                 
-                if (move.startsWith('D@')) whiteDragons--;
-                else if (move.startsWith('d@')) blackDragons--;
+				if (move.startsWith('D@')) {
+					if (turnBeforeMove) {
+						whiteDragons--;  // Белые ходили
+					} else {
+						blackDragons--;  // Чёрные ходили
+					}
+				}
                 
                 lastMoveSquares = { from, to };
                 
