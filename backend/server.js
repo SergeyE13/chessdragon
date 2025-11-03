@@ -87,51 +87,6 @@ app.use((req, res, next) => {
     next();
 });
 
-// Endpoint для проверки файловой системы
-app.get('/debug-fs', (req, res) => {
-    const files = fs.readdirSync(__dirname);
-    const fileInfo = files.map(file => {
-        const filePath = path.join(__dirname, file);
-        try {
-            const stats = fs.statSync(filePath);
-            return {
-                name: file,
-                isFile: stats.isFile(),
-                size: stats.size,
-                modified: stats.mtime
-            };
-        } catch (err) {
-            return { name: file, error: err.message };
-        }
-    });
-    
-    res.json({
-        currentDir: __dirname,
-        files: fileInfo,
-        statsFileExists: fs.existsSync(statsFilePath),
-        statsFileContent: readStats()
-    });
-});
-
-// Endpoint для принудительной записи тестовых данных
-app.post('/test-stats', (req, res) => {
-    const stats = readStats();
-    const today = new Date().toISOString().split('T')[0];
-    
-    if (!stats[today]) stats[today] = {};
-    
-    // Добавляем тестовые данные
-    stats[today]['GET /test-stats 200'] = (stats[today]['GET /test-stats 200'] || 0) + 1;
-    stats[today]['POST /get-best-move 200'] = (stats[today]['POST /get-best-move 200'] || 0) + 5;
-    
-    dumpStats(stats);
-    
-    res.json({
-        message: 'Test stats added',
-        currentStats: stats
-    });
-});
-
 app.post('/get-best-move', async (req, res) => {
     console.log('Received request with FEN:', req.body.fen);
     
@@ -304,6 +259,51 @@ app.get('/api/hello', (req, res) => {
   res.json({ message: 'Hello from Render!' });
 });
 
+// Endpoint для проверки файловой системы
+app.get('/api/debug-fs', (req, res) => {
+    const files = fs.readdirSync(__dirname);
+    const fileInfo = files.map(file => {
+        const filePath = path.join(__dirname, file);
+        try {
+            const stats = fs.statSync(filePath);
+            return {
+                name: file,
+                isFile: stats.isFile(),
+                size: stats.size,
+                modified: stats.mtime
+            };
+        } catch (err) {
+            return { name: file, error: err.message };
+        }
+    });
+    
+    res.json({
+        currentDir: __dirname,
+        files: fileInfo,
+        statsFileExists: fs.existsSync(statsFilePath),
+        statsFileContent: readStats()
+    });
+});
+
+// Endpoint для принудительной записи тестовых данных
+app.post('/api/test-stats', (req, res) => {
+    const stats = readStats();
+    const today = new Date().toISOString().split('T')[0];
+    
+    if (!stats[today]) stats[today] = {};
+    
+    // Добавляем тестовые данные
+    stats[today]['GET /test-stats 200'] = (stats[today]['GET /test-stats 200'] || 0) + 1;
+    stats[today]['POST /get-best-move 200'] = (stats[today]['POST /get-best-move 200'] || 0) + 5;
+    
+    dumpStats(stats);
+    
+    res.json({
+        message: 'Test stats added',
+        currentStats: stats
+    });
+});
+
 // Добавьте endpoint для получения статистики
 app.get('/api/stats', (req, res) => {
     res.json(readStats());
@@ -313,7 +313,11 @@ app.get('/admin/stats', (req, res) => {
     res.sendFile(path.join(__dirname, '../frontend/stats.html'));
 });
 
-app.get('/admin/stats-chart', (req, res) => {
+app.get('/admin/stats-debug', (req, res) => {
+    res.sendFile(path.join(__dirname, '../frontend/stats-debug.html'));
+});
+
+app.get('/api/stats-chart', (req, res) => {
     const stats = readStats();
     
     // Подготовка данных за последние 7 дней
