@@ -1,0 +1,1 @@
+curl -X GET https://chessdragon.onrender.com/api/hello

@@ -188,7 +188,7 @@ app.get('/test-variant', (req, res) => {
 });
 
 // Ваши API роуты
-app.get('/api/data', (req, res) => {
+app.get('/api/hello', (req, res) => {
   res.json({ message: 'Hello from Render!' });
 });
 
