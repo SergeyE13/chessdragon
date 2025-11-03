@@ -230,7 +230,7 @@ app.get('/api/hello', (req, res) => {
 });
 
 // Добавьте endpoint для получения статистики
-app.get('/stats', (req, res) => {
+app.get('/api/stats', (req, res) => {
     res.json(readStats());
 });
 
