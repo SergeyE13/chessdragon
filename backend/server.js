@@ -1,11 +1,10 @@
 ﻿const express = require('express');
 const { spawn } = require('child_process');
 const path = require('path');
+const fs = require('fs');
 const cors = require('cors');
 
-const fs = require('fs');
-const statsFilePath = 'stats.json';
-
+const statsFilePath = path.join(__dirname, 'stats.json');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -13,15 +12,28 @@ const PORT = process.env.PORT || 3000;
 // Функция для чтения статистики
 const readStats = () => {
     try {
-        return JSON.parse(fs.readFileSync(statsFilePath));
+        if (fs.existsSync(statsFilePath)) {
+            const data = fs.readFileSync(statsFilePath, 'utf8');
+            console.log('📊 Stats file content:', data);
+            return JSON.parse(data);
+        } else {
+            console.log('📊 Stats file does not exist');
+            return {};
+        }
     } catch (err) {
+        console.error('❌ Error reading stats:', err);
         return {};
     }
 };
 
 // Функция для сохранения статистики
 const dumpStats = (stats) => {
-    fs.writeFileSync(statsFilePath, JSON.stringify(stats, null, 2));
+    try {
+        fs.writeFileSync(statsFilePath, JSON.stringify(stats, null, 2));
+        console.log('💾 Stats saved successfully');
+    } catch (err) {
+        console.error('❌ Error saving stats:', err);
+    }
 };
 
 app.use(cors());
@@ -39,10 +51,91 @@ function getEnginePath() {
     }
 }
 
+// Middleware для подсчета запросов
+app.use((req, res, next) => {
+    const originalSend = res.send;
+    const originalJson = res.json;
+    
+    res.on('finish', () => {
+        try {
+            const stats = readStats();
+            const today = new Date().toISOString().split('T')[0];
+            const route = req.route ? req.route.path : req.path;
+            const event = `${req.method} ${route} ${res.statusCode}`;
+            
+            console.log(`📈 Recording event: ${event} for date: ${today}`);
+            
+            // Инициализация счетчиков
+            if (!stats[today]) {
+                stats[today] = {};
+                console.log(`🆕 Created new day: ${today}`);
+            }
+            if (!stats[today][event]) {
+                stats[today][event] = 0;
+            }
+            
+            stats[today][event] += 1;
+            console.log(`🔢 Updated count for ${event}: ${stats[today][event]}`);
+            
+            dumpStats(stats);
+            console.log('📋 Current stats:', stats);
+            
+        } catch (error) {
+            console.error('❌ Error in stats middleware:', error);
+        }
+    });
+    next();
+});
+
+// Endpoint для проверки файловой системы
+app.get('/debug-fs', (req, res) => {
+    const files = fs.readdirSync(__dirname);
+    const fileInfo = files.map(file => {
+        const filePath = path.join(__dirname, file);
+        try {
+            const stats = fs.statSync(filePath);
+            return {
+                name: file,
+                isFile: stats.isFile(),
+                size: stats.size,
+                modified: stats.mtime
+            };
+        } catch (err) {
+            return { name: file, error: err.message };
+        }
+    });
+    
+    res.json({
+        currentDir: __dirname,
+        files: fileInfo,
+        statsFileExists: fs.existsSync(statsFilePath),
+        statsFileContent: readStats()
+    });
+});
+
+// Endpoint для принудительной записи тестовых данных
+app.post('/test-stats', (req, res) => {
+    const stats = readStats();
+    const today = new Date().toISOString().split('T')[0];
+    
+    if (!stats[today]) stats[today] = {};
+    
+    // Добавляем тестовые данные
+    stats[today]['GET /test-stats 200'] = (stats[today]['GET /test-stats 200'] || 0) + 1;
+    stats[today]['POST /get-best-move 200'] = (stats[today]['POST /get-best-move 200'] || 0) + 5;
+    
+    dumpStats(stats);
+    
+    res.json({
+        message: 'Test stats added',
+        currentStats: stats
+    });
+});
+
 app.post('/get-best-move', async (req, res) => {
     console.log('Received request with FEN:', req.body.fen);
     
-    const { fen, depth = 15 } = req.body;
+    const { fen, depth = 10 } = req.body;
     
     if (!fen) {
         return res.status(400).json({ error: 'FEN is required' });
@@ -111,25 +204,7 @@ app.post('/get-best-move', async (req, res) => {
                     });
                     
                     // Завершаем движок
-                    engine.stdin.write('quit\n');
-					
-					// Middleware для подсчета запросов
-					app.use((req, res, next) => {
-						res.on('finish', () => {
-							const stats = readStats();
-							const route = req.route ? req.route.path : req.path;
-							const event = `${req.method} ${route} ${res.statusCode}`;
-							
-							// Инициализация счетчиков по датам
-							const today = new Date().toISOString().split('T')[0];
-							if (!stats[today]) stats[today] = {};
-							if (!stats[today][event]) stats[today][event] = 0;
-							
-							stats[today][event] += 1;
-							dumpStats(stats);
-						});
-						next();
-					});					
+                    engine.stdin.write('quit\n');			
 					
                 }
             }

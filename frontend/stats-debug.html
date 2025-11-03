@@ -1,0 +1,95 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>Статистика игры - Отладка</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h1>Статистика использования - Отладка</h1>
+    
+    <div>
+        <button onclick="testStats()">Добавить тестовые данные</button>
+        <button onclick="checkFileSystem()">Проверить файловую систему</button>
+        <button onclick="loadStats()">Загрузить статистику</button>
+    </div>
+    
+    <div id="debugInfo" style="background: #f5f5f5; padding: 10px; margin: 10px 0;"></div>
+    
+    <div style="width: 800px; height: 400px;">
+        <canvas id="usageChart"></canvas>
+    </div>
+    
+    <script>
+        function showDebugInfo(message) {
+            document.getElementById('debugInfo').innerHTML = '<pre>' + JSON.stringify(message, null, 2) + '</pre>';
+        }
+        
+        function testStats() {
+            fetch('/test-stats', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    showDebugInfo(data);
+                    loadStats();
+                });
+        }
+        
+        function checkFileSystem() {
+            fetch('/debug-fs')
+                .then(response => response.json())
+                .then(data => showDebugInfo(data));
+        }
+        
+        function loadStats() {
+            fetch('/stats')
+                .then(response => response.json())
+                .then(stats => {
+                    console.log('Received stats:', stats);
+                    showDebugInfo({ message: 'Статистика загружена', stats: stats });
+                    
+                    if (Object.keys(stats).length === 0) {
+                        alert('❌ Статистика пустая! Проверьте консоль сервера');
+                        return;
+                    }
+                    
+                    // Обработка данных для Chart.js
+                    const dates = Object.keys(stats).sort();
+                    const moveCounts = dates.map(date => {
+                        const dayStats = stats[date];
+                        return dayStats['POST /get-best-move 200'] || 0;
+                    });
+                    
+                    // Создание графика
+                    const ctx = document.getElementById('usageChart').getContext('2d');
+                    new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: dates,
+                            datasets: [{
+                                label: 'Запросов лучшего хода',
+                                data: moveCounts,
+                                borderColor: 'rgb(75, 192, 192)',
+                                tension: 0.1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                title: {
+                                    display: true,
+                                    text: 'Активность пользователей'
+                                }
+                            }
+                        }
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading stats:', error);
+                    showDebugInfo({ error: error.message });
+                });
+        }
+        
+        // Автоматически загружаем статистику при загрузке страницы
+        loadStats();
+    </script>
+</body>
+</html>
