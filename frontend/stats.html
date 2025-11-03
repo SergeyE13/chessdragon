@@ -1,0 +1,50 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>Статистика игры</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h1>Статистика использования</h1>
+    <div style="width: 800px; height: 400px;">
+        <canvas id="usageChart"></canvas>
+    </div>
+    
+    <script>
+        fetch('/stats')
+            .then(response => response.json())
+            .then(stats => {
+                // Обработка данных для Chart.js
+                const dates = Object.keys(stats).sort();
+                const moveCounts = dates.map(date => {
+                    const dayStats = stats[date];
+                    return dayStats['POST /get-best-move 200'] || 0;
+                });
+                
+                // Создание графика
+                const ctx = document.getElementById('usageChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: dates,
+                        datasets: [{
+                            label: 'Запросов лучшего хода',
+                            data: moveCounts,
+                            borderColor: 'rgb(75, 192, 192)',
+                            tension: 0.1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Активность пользователей'
+                            }
+                        }
+                    }
+                });
+            });
+    </script>
+</body>
+</html>

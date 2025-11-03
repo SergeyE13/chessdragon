@@ -3,8 +3,26 @@ const { spawn } = require('child_process');
 const path = require('path');
 const cors = require('cors');
 
+const fs = require('fs');
+const statsFilePath = 'stats.json';
+
+
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Функция для чтения статистики
+const readStats = () => {
+    try {
+        return JSON.parse(fs.readFileSync(statsFilePath));
+    } catch (err) {
+        return {};
+    }
+};
+
+// Функция для сохранения статистики
+const dumpStats = (stats) => {
+    fs.writeFileSync(statsFilePath, JSON.stringify(stats, null, 2));
+};
 
 app.use(cors());
 app.use(express.json());
@@ -94,6 +112,25 @@ app.post('/get-best-move', async (req, res) => {
                     
                     // Завершаем движок
                     engine.stdin.write('quit\n');
+					
+					// Middleware для подсчета запросов
+					app.use((req, res, next) => {
+						res.on('finish', () => {
+							const stats = readStats();
+							const route = req.route ? req.route.path : req.path;
+							const event = `${req.method} ${route} ${res.statusCode}`;
+							
+							// Инициализация счетчиков по датам
+							const today = new Date().toISOString().split('T')[0];
+							if (!stats[today]) stats[today] = {};
+							if (!stats[today][event]) stats[today][event] = 0;
+							
+							stats[today][event] += 1;
+							dumpStats(stats);
+						});
+						next();
+					});					
+					
                 }
             }
             
@@ -190,6 +227,56 @@ app.get('/test-variant', (req, res) => {
 // Ваши API роуты
 app.get('/api/hello', (req, res) => {
   res.json({ message: 'Hello from Render!' });
+});
+
+// Добавьте endpoint для получения статистики
+app.get('/stats', (req, res) => {
+    res.json(readStats());
+});
+
+app.get('/admin/stats', (req, res) => {
+    res.sendFile(path.join(__dirname, 'stats.html'));
+});
+
+app.get('/stats-chart', (req, res) => {
+    const stats = readStats();
+    
+    // Подготовка данных за последние 7 дней
+    const dates = [];
+    const moveCounts = [];
+    
+    for (let i = 6; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        const dateStr = date.toISOString().split('T')[0];
+        dates.push(dateStr);
+        
+        const dayStats = stats[dateStr] || {};
+        const moves = dayStats['POST /get-best-move 200'] || 0;
+        moveCounts.push(moves);
+    }
+    
+    // Генерация URL для QuickChart
+    const chartUrl = `https://quickchart.io/chart?c={
+        type: 'line',
+        data: {
+            labels: ${JSON.stringify(dates)},
+            datasets: [{
+                label: 'Запросов лучшего хода',
+                data: ${JSON.stringify(moveCounts)},
+                borderColor: 'rgb(75, 192, 192)',
+                tension: 0.1
+            }]
+        },
+        options: {
+            title: {
+                display: true,
+                text: 'Активность пользователей за 7 дней'
+            }
+        }
+    }`;
+    
+    res.redirect(chartUrl);
 });
 
 // Все остальные запросы отправляем на фронтенд
