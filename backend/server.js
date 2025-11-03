@@ -235,7 +235,7 @@ app.get('/stats', (req, res) => {
 });
 
 app.get('/admin/stats', (req, res) => {
-    res.sendFile(path.join(__dirname, 'stats.html'));
+    res.sendFile(path.join(__dirname, '../frontend/stats.html'));
 });
 
 app.get('/stats-chart', (req, res) => {
