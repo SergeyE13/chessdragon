@@ -11,9 +11,18 @@
     </div>
     
     <script>
-        fetch('api2/stats')
-            .then(response => response.json())
+        fetch('/api/stats')
+			.then(response => {
+				if (!response.ok) {
+					throw new Error('Сервер ответил ошибкой: ' + response.status);
+				}
+				return response.json();
+			})			
             .then(stats => {
+				// Успешно получили данные
+				console.log('Статистика:', stats);
+				createChart(stats);			
+			
                 // Обработка данных для Chart.js
                 const dates = Object.keys(stats).sort();
                 const moveCounts = dates.map(date => {
@@ -45,6 +54,13 @@
                     }
                 });
             });
+			
+			.catch(error => {
+				// Обработка ошибок (сеть не работает, сервер недоступен и т.д.)
+				console.error('Ошибка:', error);
+				alert('Не удалось загрузить статистику');
+			});
+	
     </script>
 </body>
 </html>

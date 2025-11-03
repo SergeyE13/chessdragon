@@ -238,7 +238,7 @@ app.get('/admin/stats', (req, res) => {
     res.sendFile(path.join(__dirname, '../frontend/stats.html'));
 });
 
-app.get('/stats-chart', (req, res) => {
+app.get('/admin/stats-chart', (req, res) => {
     const stats = readStats();
     
     // Подготовка данных за последние 7 дней
