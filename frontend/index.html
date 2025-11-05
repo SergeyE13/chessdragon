@@ -400,6 +400,95 @@
             margin-right: 10px;
         }
 		
+		// ===== CSS: стили для модального окна =====
+		.promotion-modal {
+			display: none;
+			position: fixed;      /* ← ГЛАВНОЕ: fixed, не absolute */
+			z-index: 10000;       /* ← ГЛАВНОЕ: очень высокий */
+			left: 0;
+			top: 0;
+			width: 100%;
+			height: 100%;
+			background-color: rgba(0, 0, 0, 0.6);
+			align-items: center;
+			justify-content: center;
+		}
+
+		.promotion-modal.active {
+			display: flex !important;  /* ← Добавьте !important */
+		}
+
+		.promotion-content {
+			background: white;
+			border-radius: 15px;
+			padding: 25px;
+			box-shadow: 0 15px 50px rgba(0, 0, 0, 0.4);
+			text-align: center;
+			animation: modalFadeIn 0.3s ease;
+			
+			position: relative;
+			top: auto;
+			left: auto;
+			margin: auto;           /* ← ГЛАВНОЕ: центрирование */
+			width: auto;
+			max-width: 95vw;
+			max-height: 95vh;
+		}
+
+
+		@keyframes modalFadeIn {
+			from {
+				opacity: 0;
+				transform: scale(0.9);
+			}
+			to {
+				opacity: 1;
+				transform: scale(1);
+			}
+		}
+		
+		.promotion-content h3 {
+			margin-bottom: 15px;  /* Было 20px */
+			font-size: 18px;       /* Было 20px */
+		}		
+
+		.promotion-pieces {
+			display: flex;
+			gap: 10px;             /* Было 15px */
+			justify-content: center;
+			flex-wrap: wrap;       /* Добавить перенос */
+		}
+
+		.promotion-piece-btn {
+			width: 70px;
+			height: 70px;
+			border: 3px solid #3498db;
+			border-radius: 12px;
+			background: white;
+			font-size: 55px;           /* ← ГЛАВНОЕ: большой размер */
+			line-height: 1;            /* ← ДОБАВИТЬ */
+			cursor: pointer;
+			transition: all 0.2s ease;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			padding: 0;
+			font-weight: bold;         /* ← ДОБАВИТЬ */
+			color: black;              /* ← ДОБАВИТЬ */
+		}
+
+		.promotion-piece-btn:hover {
+			border-color: #2980b9;
+			background: #ecf0f1;
+			transform: scale(1.15);
+			box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+		}
+
+
+		.promotion-piece-btn:active {
+			transform: scale(0.95);
+		}
+
 		@media (max-width: 480px) {
 			.captured-pieces-container {
 				margin: 3px 0;
@@ -413,6 +502,17 @@
 				margin-top: 6px;			
 				font-size: 14px;
 			}
+			
+			.promotion-content {
+				padding: 12px;
+				margin: 10px;
+			}
+			
+			.promotion-piece-btn {
+				width: 45px;
+				height: 45px;
+				font-size: 32px;
+			}			
 		}			
 
         @media (max-width: 768px) {
@@ -473,6 +573,17 @@
 				font-size: 16px;
 			}
 			
+			.promotion-content {
+				padding: 15px;
+				margin: 20px;
+			}			
+			
+			.promotion-piece-btn {
+				width: 50px;
+				height: 50px;
+				font-size: 35px;
+			}			
+			
 			body {
 				padding: 3px;
 			}
@@ -496,16 +607,18 @@
             
             <div class="control-group">
                 <h3>Уровень</h3>
-                <select id="difficulty" onchange="setDifficulty(this.value)">
-                    <option value="1">Уровень 1 (800)</option>
-                    <option value="2">Уровень 2 (1000)</option>
-                    <option value="3">Уровень 3 (1200)</option>
-                    <option value="4" selected>Уровень 4 (1400)</option>
-                    <option value="5">Уровень 5 (1600)</option>
-                    <option value="6">Уровень 6 (1800)</option>
-                    <option value="7">Уровень 7 (2000)</option>
-                </select>
+				<select id="difficulty" onchange="setDifficulty(this.value)">
+					<option value="0">Уровень 0 (500)</option>
+					<option value="1">Уровень 1 (800)</option>
+					<option value="2">Уровень 2 (1000)</option>
+					<option value="3">Уровень 3 (1200)</option>
+					<option value="4" selected>Уровень 4 (1400)</option>
+					<option value="5">Уровень 5 (1600)</option>
+					<option value="6">Уровень 6 (1800)</option>
+					<option value="7">Уровень 7 (2000)</option>
+				</select>			
             </div>
+			
 
             <div class="evaluation">
                 <h3>Оценка позиции</h3>
@@ -563,7 +676,7 @@
             <h3>История ходов</h3>
             <div class="move-list" id="move-history"></div>
         </div>
-    </div>
+    </div>	
 
     <script type="module">
         //const API_URL = 'http://localhost:3000';
@@ -584,17 +697,19 @@
         let blackDragons = 2;
         let moveHistory = [];
 		let capturedByWhite = [];
-		let capturedByBlack = [];		
+		let capturedByBlack = [];	
+		let pendingPromotionMove = null;		
 
-        const difficultySettings = {
-            1: { depth: 1 },
-            2: { depth: 2 },
-            3: { depth: 3 },
-            4: { depth: 4 },
-            5: { depth: 5 },
-            6: { depth: 6 },
-            7: { depth: 7 }
-        };
+		const difficultySettings = {
+			0: { depth: 2, name: 'Новичок' },  // НОВЫЙ уровень с минимакс
+			1: { depth: 1, name: 'Уровень 1 (800)' },
+			2: { depth: 2, name: 'Уровень 2 (1000)' },
+			3: { depth: 3, name: 'Уровень 3 (1200)' },
+			4: { depth: 4, name: 'Уровень 4 (1400)' },
+			5: { depth: 5, name: 'Уровень 5 (1600)' },
+			6: { depth: 6, name: 'Уровень 6 (1800)' },
+			7: { depth: 7, name: 'Уровень 7 (2000)' }
+		};		
 
         function safeBoardCall(callback, defaultValue = null) {
             try {
@@ -615,7 +730,13 @@
                 gameReady = false;
 				capturedByWhite = [];
 				capturedByBlack = [];
-				updateCapturedPieces();				
+				updateCapturedPieces();		
+
+				const modal = document.getElementById('promotion-modal');
+				if (modal) {
+					modal.classList.remove('active');
+				}
+				pendingPromotionMove = null;		
                 
                 if (board) {
                     try {
@@ -674,30 +795,197 @@ pieceValue = d:310
             }
         }
 
-        async function getBestMoveFromEngine(fen, depth) {
-            try {
-                const response = await fetch(`${API_URL}/get-best-move`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ fen, depth })
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
-                }
-                
-                const data = await response.json();
-                return { move: data.bestMove, info: null };
-            } catch (error) {
-                console.error('getBestMoveFromEngine error:', error);
-                throw error;
-            }
-        }
+
+		// ===== Реализация Minimax алгоритма =====
+
+		// Оценка позиции
+		function evaluatePosition() {
+			const fen = safeBoardCall(() => board.fen());
+			if (!fen) return 0;
+			
+			const boardStr = fen.split(' ')[0].split('[')[0];
+			let score = 0;
+			
+			const pieceValues = {
+				'P': 100, 'N': 320, 'B': 330, 'R': 500, 'Q': 900, 'K': 20000, 'D': 310,
+				'p': -100, 'n': -320, 'b': -330, 'r': -500, 'q': -900, 'k': -20000, 'd': -310
+			};
+			
+			// Материальная оценка
+			for (let char of boardStr) {
+				if (pieceValues[char]) {
+					score += pieceValues[char];
+				}
+			}
+			
+			// Позиционная оценка (центр доски)
+			const centerBonus = 10;
+			const centerSquares = ['d4', 'e4', 'd5', 'e5'];
+			centerSquares.forEach(sq => {
+				const piece = getPieceAtSquare(fen, sq);
+				if (piece) {
+					if (piece === piece.toUpperCase()) {
+						score += centerBonus;
+					} else {
+						score -= centerBonus;
+					}
+				}
+			});
+			
+			return score;
+		}
+
+		// Minimax с alpha-beta отсечением
+		function minimaxFixed(depth, isMaximizing) {
+			// Базовый случай: глубина 0
+			if (depth === 0) {
+				return { score: evaluatePosition(), move: null };
+			}
+			
+			// Проверяем конец игры
+			const isGameOver = safeBoardCall(() => board.isGameOver(), false);
+			if (isGameOver) {
+				const isCheck = safeBoardCall(() => board.isCheck(), false);
+				if (isCheck) {
+					return { score: isMaximizing ? -100000 : 100000, move: null };
+				} else {
+					return { score: 0, move: null };
+				}
+			}
+			
+			// Получаем легальные ходы
+			const legalMovesStr = safeBoardCall(() => board.legalMoves(), '');
+			const legalMoves = legalMovesStr.split(' ').filter(m => m);
+			
+			if (legalMoves.length === 0) {
+				return { score: 0, move: null };
+			}
+			
+			let bestMove = null;
+			let bestScore = isMaximizing ? -Infinity : Infinity;
+			
+			// Перебираем все ходы
+			for (let move of legalMoves) {
+				// Сохраняем FEN ДО хода
+				const fenBefore = safeBoardCall(() => board.fen());
+				
+				// Делаем ход на глобальном board
+				const moveSuccess = safeBoardCall(() => {
+					try {
+						board.push(move);
+						return true;
+					} catch (e) {
+						return false;
+					}
+				}, false);
+				
+				if (!moveSuccess) continue;
+				
+				// Рекурсивный вызов
+				const result = minimaxFixed(depth - 1, !isMaximizing);
+				
+				// Восстанавливаем board
+				try {
+					board.delete();
+				} catch (e) {}
+				
+				try {
+					const newBoard = new ffish.Board('Chess_dragon', fenBefore);
+					board = newBoard;  // Главное: заменяем глобальный board
+				} catch (e) {
+					console.error('Restore error:', e);
+				}
+				
+				// Выбираем лучший ход
+				if (isMaximizing && result.score > bestScore) {
+					bestScore = result.score;
+					bestMove = move;
+				} else if (!isMaximizing && result.score < bestScore) {
+					bestScore = result.score;
+					bestMove = move;
+				}
+			}
+			
+			return { score: bestScore, move: bestMove };
+		}
+		
+		// Получить лучший ход через минимакс
+		function getBestMoveWithMinimax(depth) {
+			try {
+				console.log(`Minimax search (depth ${depth})...`);
+				
+				const currentTurn = safeBoardCall(() => board.turn(), true);
+				const isMaximizing = currentTurn;
+				
+				const startTime = Date.now();
+				const result = minimaxFixed(depth, isMaximizing);  // ← используем minimaxFixed
+				const elapsed = Date.now() - startTime;
+				
+				console.log(`Minimax completed in ${elapsed}ms, move: ${result.move}`);
+				
+				if (!result.move) {
+					const moves = safeBoardCall(() => 
+						board.legalMoves().split(' ').filter(m => m)
+					);
+					return moves[0] || null;
+				}
+				
+				return result.move;
+			} catch (error) {
+				console.error('getBestMoveWithMinimax error:', error);
+				const moves = safeBoardCall(() => 
+					board.legalMoves().split(' ').filter(m => m)
+				);
+				return moves[0] || null;
+			}
+		}
+
+		async function getBestMoveFromEngine(fen, depth) {
+			try {
+				// НОВАЯ ЛОГИКА: Проверяем уровень сложности
+				if (currentDifficulty === 0) {
+					console.log('Level 0: Using Minimax (depth 2)');
+					
+					const move = getBestMoveWithMinimax(2);  // ← глубина 2
+					
+					if (!move) {
+						throw new Error('No moves found');
+					}
+					
+					return { move: move, info: null };
+				} else {
+					// Уровни 1-7: Используем Fairy-Stockfish
+					console.log('Using Fairy-Stockfish engine...');
+					const response = await fetch(`${API_URL}/get-best-move`, {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({ fen, depth })
+					});
+					
+					if (!response.ok) {
+						throw new Error(`HTTP ${response.status}`);
+					}
+					
+					const data = await response.json();
+					return { move: data.bestMove, info: null };
+				}
+			} catch (error) {
+				console.error('getBestMoveFromEngine error:', error);
+				throw error;
+			}
+		}
 
         function makePlayerMove(move) {
             if (!gameReady) return;
             
             const currentTurn = safeBoardCall(() => board.turn(), true);
+			
+			pendingPromotionMove = null;  // ← ДОБАВИТЬ
+			const modal = document.getElementById('promotion-modal');
+			if (modal) {
+				modal.classList.remove('active');  // ← ДОБАВИТЬ
+			}			
+
             const fenBefore = safeBoardCall(() => board.fen(), '');
             const from = move.includes('@') ? null : move.substring(0, 2);
             const to = move.includes('@') ? move.substring(2) : move.substring(2, 4);
@@ -969,110 +1257,58 @@ pieceValue = d:310
         }
 
 
-function handleSquareClick(square) {
-    if (!gameReady) return;
-    
-    const currentTurn = safeBoardCall(() => board.turn(), true);
-    const isPlayerTurn = (playerColor === 'white' && currentTurn) || (playerColor === 'black' && !currentTurn);
-    
-    if (!isPlayerTurn) {
-        console.log('Not player turn');
-        return;
-    }
-    
-    const legalMovesStr = safeBoardCall(() => board.legalMoves(), '');
-    const legalMoves = legalMovesStr.split(' ').filter(m => m);
-    
-    if (selectedSquare) {
-        const move = selectedSquare + square;
-        if (legalMoves.includes(move)) {
-            makePlayerMove(move);
-            return;
-        }
-        
-        const promotions = ['q', 'r', 'b', 'n', 'd'];
-        for (let promo of promotions) {
-            if (legalMoves.includes(move + promo)) {
-                showPromotionDialog(move);
-                return;
-            }
-        }
-    }
-    
-    if (selectedDragon) {
-        // ИСПРАВЛЕНИЕ: Всегда используем 'D@' независимо от цвета!
-        const dropMove = 'D@' + square;
-        console.log('Trying dragon drop:', {dropMove, square, legalMoves, includes: legalMoves.includes(dropMove)});
-        if (legalMoves.includes(dropMove)) {
-            makePlayerMove(dropMove);
-            return;
-        } else {
-            console.warn('Dragon drop not legal!', dropMove);
-        }
-    }
-    
-    const fen = safeBoardCall(() => board.fen(), '');
-    const piece = getPieceAtSquare(fen, square);
-    if (piece && ((playerColor === 'white' && piece === piece.toUpperCase()) || (playerColor === 'black' && piece === piece.toLowerCase()))) {
-        selectedSquare = square;
-        selectedDragon = null;
-        updateBoard();
-        highlightLegalMoves(square);
-    }
-}
+		function handleSquareClick(square) {
+			if (!gameReady) return;
+			
+			const currentTurn = safeBoardCall(() => board.turn(), true);
+			const isPlayerTurn = (playerColor === 'white' && currentTurn) || (playerColor === 'black' && !currentTurn);
+			
+			if (!isPlayerTurn) {
+				console.log('Not player turn');
+				return;
+			}
+			
+			const legalMovesStr = safeBoardCall(() => board.legalMoves(), '');
+			const legalMoves = legalMovesStr.split(' ').filter(m => m);
+			
+			if (selectedSquare) {
+				const move = selectedSquare + square;
+				if (legalMoves.includes(move)) {
+					makePlayerMove(move);
+					return;
+				}
+				
+				const promotions = ['q', 'r', 'b', 'n', 'd'];
+				for (let promo of promotions) {
+					if (legalMoves.includes(move + promo)) {
+						showPromotionDialog(move);
+						return;
+					}
+				}
+			}
+			
+			if (selectedDragon) {
+				// ИСПРАВЛЕНИЕ: Всегда используем 'D@' независимо от цвета!
+				const dropMove = 'D@' + square;
+				console.log('Trying dragon drop:', {dropMove, square, legalMoves, includes: legalMoves.includes(dropMove)});
+				if (legalMoves.includes(dropMove)) {
+					makePlayerMove(dropMove);
+					return;
+				} else {
+					console.warn('Dragon drop not legal!', dropMove);
+				}
+			}
+			
+			const fen = safeBoardCall(() => board.fen(), '');
+			const piece = getPieceAtSquare(fen, square);
+			if (piece && ((playerColor === 'white' && piece === piece.toUpperCase()) || (playerColor === 'black' && piece === piece.toLowerCase()))) {
+				selectedSquare = square;
+				selectedDragon = null;
+				updateBoard();
+				highlightLegalMoves(square);
+			}
+		}
 
-
-        function handleSquareClick1(square) {
-            if (!gameReady) return;
-            
-            const currentTurn = safeBoardCall(() => board.turn(), true);
-            const isPlayerTurn = (playerColor === 'white' && currentTurn) || (playerColor === 'black' && !currentTurn);
-            
-            if (!isPlayerTurn) {
-                console.log('Not player turn');
-                return;
-            }
-            
-            const legalMovesStr = safeBoardCall(() => board.legalMoves(), '');
-            const legalMoves = legalMovesStr.split(' ').filter(m => m);
-            
-            if (selectedSquare) {
-                const move = selectedSquare + square;
-                if (legalMoves.includes(move)) {
-                    makePlayerMove(move);
-                    return;
-                }
-                
-                const promotions = ['q', 'r', 'b', 'n', 'd'];
-                for (let promo of promotions) {
-                    if (legalMoves.includes(move + promo)) {
-                        showPromotionDialog(move);
-                        return;
-                    }
-                }
-            }
-            
-            if (selectedDragon) {
-                const dragonLetter = selectedDragon === 'white' ? 'D' : 'd';
-                const dropMove = dragonLetter + '@' + square;
-                console.log('Trying dragon drop:', {dropMove, square, legalMoves, includes: legalMoves.includes(dropMove)});
-                if (legalMoves.includes(dropMove)) {
-                    makePlayerMove(dropMove);
-                    return;
-                } else {
-                    console.warn('Dragon drop not legal!', dropMove);
-                }
-            }
-            
-            const fen = safeBoardCall(() => board.fen(), '');
-            const piece = getPieceAtSquare(fen, square);
-            if (piece && ((playerColor === 'white' && piece === piece.toUpperCase()) || (playerColor === 'black' && piece === piece.toLowerCase()))) {
-                selectedSquare = square;
-                selectedDragon = null;
-                updateBoard();
-                highlightLegalMoves(square);
-            }
-        }
 
         function highlightLegalMoves(fromSquare) {
             const legalMovesStr = safeBoardCall(() => board.legalMoves(), '');
@@ -1342,9 +1578,54 @@ function highlightDragonDrops() {
             }, 500);
         }
 
-        function showPromotionDialog(movePrefix) {
-            makePlayerMove(movePrefix + 'q');
-        }
+		function showPromotionDialog(movePrefix) {
+			pendingPromotionMove = movePrefix;
+			
+			const modal = document.getElementById('promotion-modal');
+			const piecesContainer = document.getElementById('promotion-pieces');
+			
+			if (!modal || !piecesContainer) {
+				console.error('Promotion modal not found!');
+				makePlayerMove(movePrefix + 'q');  // Fallback
+				return;
+			}
+			
+			const currentTurn = safeBoardCall(() => board.turn(), true);
+			const isWhite = (playerColor === 'white' && currentTurn) || 
+							(playerColor === 'black' && !currentTurn);
+			
+			const promotionOptions = [
+				{ piece: 'q', symbol: isWhite ? '♕' : '♛' },
+				{ piece: 'r', symbol: isWhite ? '♖' : '♜' },
+				{ piece: 'b', symbol: isWhite ? '♗' : '♝' },
+				{ piece: 'n', symbol: isWhite ? '♘' : '♞' },
+				{ piece: 'd', symbol: isWhite ? '♤' : '♠' }
+			];
+			
+			piecesContainer.innerHTML = '';
+			
+			promotionOptions.forEach(opt => {
+				const button = document.createElement('button');
+				button.className = 'promotion-piece-btn';
+				button.textContent = opt.symbol;
+				button.onclick = () => selectPromotion(opt.piece);
+				piecesContainer.appendChild(button);
+			});
+			
+			modal.classList.add('active');
+		}
+
+
+		function selectPromotion(piece) {
+			const modal = document.getElementById('promotion-modal');
+			modal.classList.remove('active');
+			
+			if (pendingPromotionMove) {
+				const fullMove = pendingPromotionMove + piece;
+				makePlayerMove(fullMove);
+				pendingPromotionMove = null;
+			}
+		}		
 
         function selectDragon(color) {
             if (!gameReady) return;
@@ -1453,7 +1734,33 @@ function highlightDragonDrops() {
 
         window.selectDragon = selectDragon;
 
-        document.addEventListener('DOMContentLoaded', initGame);
+		document.addEventListener('DOMContentLoaded', () => {
+			const modal = document.getElementById('promotion-modal');
+			if (modal) {
+				modal.style.display = 'none';
+				modal.classList.remove('active');
+			}
+			initGame();
+		});
+		
+		// Закрытие модального окна при клике вне его
+		document.addEventListener('click', function(e) {
+			const modal = document.getElementById('promotion-modal');
+			if (e.target === modal) {
+				modal.classList.remove('active');
+				pendingPromotionMove = null;
+			}
+		});		
+		
     </script>
+
+	<!-- ПРАВИЛЬНОЕ РАСПОЛОЖЕНИЕ: -->
+	<div id="promotion-modal" class="promotion-modal">
+		<div class="promotion-content">
+			<h3>Выберите фигуру</h3>
+			<div class="promotion-pieces" id="promotion-pieces"></div>
+		</div>
+	</div>
+	
 </body>
 </html>
