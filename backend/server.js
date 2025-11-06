@@ -154,13 +154,16 @@ const flushStats = () => {
                     startTime: session.startTime,
                     endTime: session.lastActivity,
                     requestCount: session.requestCount,
-                    requests: session.requests
+                    requests: session.requests.slice()  // Копируем массив
                 });
+               dailyStats.totalRequests += session.requestCount;				
             } else {
                 // Обновляем существующую сессию
+                const oldCount = existingSession.requestCount;
                 existingSession.endTime = session.lastActivity;
                 existingSession.requestCount = session.requestCount;
-                existingSession.requests = session.requests;
+                existingSession.requests = session.requests.slice();
+                dailyStats.totalRequests += (session.requestCount - oldCount);
             }
             
             dailyStats.totalRequests += session.requestCount;
