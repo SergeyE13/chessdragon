@@ -1,4 +1,4 @@
-const express = require('express');
+﻿const express = require('express');
 const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
@@ -122,6 +122,7 @@ app.use((req, res, next) => {
     next();
 });
 
+
 // ============================================
 // СОХРАНЕНИЕ СТАТИСТИКИ ПЕРИОДИЧЕСКИ
 // ============================================
@@ -164,16 +165,22 @@ const flushStats = () => {
                     requestCount: session.requestCount,
                     requests: session.requests.slice()  // Копируем массив
                 });
+               dailyStats.totalRequests += session.requestCount;				
             } else {
                 // Обновляем существующую сессию
+                const oldCount = existingSession.requestCount;
                 existingSession.endTime = session.lastActivity;
                 existingSession.requestCount = session.requestCount;
                 existingSession.requests = session.requests.slice();
+                dailyStats.totalRequests += (session.requestCount - oldCount);
             }
+            
         });
         
-        // Пересчитываем общее количество запросов
-        dailyStats.totalRequests = dailyStats.sessions.reduce((sum, s) => sum + s.requestCount, 0);
+        // Обновляем общее количество запросов
+        dailyStats.totalRequests = activeSessions.size > 0 
+            ? dailyStats.sessions.reduce((sum, s) => sum + s.requestCount, 0)
+            : 0;
         
         // Конвертируем Set в массив для JSON
         dailyStats.uniqueIPs = Array.from(dailyStats.uniqueIPs);
@@ -271,7 +278,12 @@ app.get('/api/sessions/active', (req, res) => {
 });
 
 // ============================================
-// API ДЛЯ FAIRY-STOCKFISH
+// РАЗДАЧА СТАТИЧЕСКИХ ФАЙЛОВ (ПОСЛЕ СТАТИСТИКИ)
+// ============================================
+app.use(express.static(path.join(__dirname, '../frontend')));
+
+// ============================================
+// СУЩЕСТВУЮЩИЙ API ДЛЯ FAIRY-STOCKFISH
 // ============================================
 
 // Функция обработки запроса на лучший ход
@@ -304,17 +316,10 @@ const handleBestMove = (req, res) => {
         }
     });
     
-    fairyStockfish.on('error', (err) => {
-        console.error('❌ Engine error:', err);
-        res.status(500).json({ error: 'Engine failed to start: ' + err.message });
-    });
-    
     fairyStockfish.on('close', (code) => {
         if (bestMove) {
-            console.log(`✅ Best move: ${bestMove}`);
             res.json({ bestMove });
         } else {
-            console.error('❌ No best move found');
             res.status(500).json({ error: 'Failed to get best move' });
         }
     });
@@ -324,17 +329,7 @@ const handleBestMove = (req, res) => {
     fairyStockfish.stdin.write(`position fen ${fen}\n`);
     fairyStockfish.stdin.write(`go depth ${effectiveDepth}\n`);
     fairyStockfish.stdin.end();
-};
-
-// Два маршрута для обратной совместимости
-app.post('/api/get-best-move', handleBestMove);
-app.post('/get-best-move', handleBestMove);
-
-// ============================================
-// РАЗДАЧА СТАТИЧЕСКИХ ФАЙЛОВ (ПОСЛЕ API)
-// ============================================
-
-app.use(express.static(path.join(__dirname, '../frontend')));
+});
 
 // ============================================
 // ЗАПУСК СЕРВЕРА
@@ -344,7 +339,6 @@ app.listen(PORT, () => {
     console.log(`✅ Server running on port ${PORT}`);
     console.log(`📊 Statistics enabled`);
     console.log(`📁 Stats file: ${statsFilePath}`);
-    console.log(`🎯 Engine path: ${getEnginePath()}`);
 });
 
 // Сохранение статистики при выключении сервера
