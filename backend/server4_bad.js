@@ -17,6 +17,7 @@ const activeSessions = new Map();
 // УТИЛИТЫ ДЛЯ РАБОТЫ СО СТАТИСТИКОЙ
 // ============================================
 
+// Чтение статистики из файла
 const readStats = () => {
     try {
         if (fs.existsSync(statsFilePath)) {
@@ -30,6 +31,7 @@ const readStats = () => {
     }
 };
 
+// Сохранение статистики в файл
 const saveStats = (stats) => {
     try {
         fs.writeFileSync(statsFilePath, JSON.stringify(stats, null, 2));
@@ -39,6 +41,7 @@ const saveStats = (stats) => {
     }
 };
 
+// Получение IP адреса клиента
 const getClientIP = (req) => {
     return req.headers['x-forwarded-for']?.split(',')[0] || 
            req.headers['x-real-ip'] || 
@@ -47,14 +50,17 @@ const getClientIP = (req) => {
            'unknown';
 };
 
+// Создание уникального ID сессии
 const createSessionId = (ip) => {
     return `${ip}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 };
 
+// Получение даты в формате YYYY-MM-DD
 const getDateKey = (date = new Date()) => {
     return date.toISOString().split('T')[0];
 };
 
+// Получение пути к движку в зависимости от платформы
 function getEnginePath() {
     if (process.platform === 'win32') {
         return path.join(__dirname, 'engines', 'fairy-stockfish-largeboard_x86-64.exe');
@@ -75,12 +81,15 @@ app.use((req, res, next) => {
     const ip = getClientIP(req);
     const userAgent = req.headers['user-agent'] || 'unknown';
     const now = new Date();
+    const dateKey = getDateKey(now);
     const method = req.method;
     const url = req.originalUrl || req.url;
     
+    // Создаём или получаем sessionId
     let sessionId = req.headers['x-session-id'];
     
     if (!sessionId || !activeSessions.has(sessionId)) {
+        // Новая сессия
         sessionId = createSessionId(ip);
         activeSessions.set(sessionId, {
             id: sessionId,
@@ -91,30 +100,40 @@ app.use((req, res, next) => {
             requests: [],
             requestCount: 0
         });
+        
         console.log(`🔵 New session: ${sessionId} from ${ip}`);
     }
     
+    // Обновляем сессию
     const session = activeSessions.get(sessionId);
     session.lastActivity = now.toISOString();
     session.requestCount++;
-    session.requests.push({ method, url, timestamp: now.toISOString() });
+    session.requests.push({
+        method,
+        url,
+        timestamp: now.toISOString()
+    });
     
+    // Добавляем sessionId в ответ
     res.setHeader('X-Session-ID', sessionId);
+    
     console.log(`📊 ${method} ${url} | Session: ${sessionId} | IP: ${ip}`);
     
     next();
 });
 
 // ============================================
-// СОХРАНЕНИЕ СТАТИСТИКИ
+// СОХРАНЕНИЕ СТАТИСТИКИ ПЕРИОДИЧЕСКИ
 // ============================================
 
+// Функция сохранения статистики
 const flushStats = () => {
     try {
         const stats = readStats();
         const now = new Date();
         const dateKey = getDateKey(now);
         
+        // Инициализируем дневную статистику
         if (!stats.daily[dateKey]) {
             stats.daily[dateKey] = {
                 date: dateKey,
@@ -126,11 +145,16 @@ const flushStats = () => {
         
         const dailyStats = stats.daily[dateKey];
         
+        // Обрабатываем активные сессии
         activeSessions.forEach((session, sessionId) => {
+            // Добавляем IP в Set уникальных IP
             dailyStats.uniqueIPs.add(session.ip);
+            
+            // Проверяем есть ли уже эта сессия в дневной статистике
             const existingSession = dailyStats.sessions.find(s => s.id === sessionId);
             
             if (!existingSession) {
+                // Новая сессия - добавляем
                 dailyStats.sessions.push({
                     id: sessionId,
                     ip: session.ip,
@@ -138,172 +162,176 @@ const flushStats = () => {
                     startTime: session.startTime,
                     endTime: session.lastActivity,
                     requestCount: session.requestCount,
-                    requests: session.requests.slice()
+                    requests: session.requests.slice()  // Копируем массив
                 });
             } else {
+                // Обновляем существующую сессию
                 existingSession.endTime = session.lastActivity;
                 existingSession.requestCount = session.requestCount;
                 existingSession.requests = session.requests.slice();
             }
         });
         
+        // Пересчитываем общее количество запросов
         dailyStats.totalRequests = dailyStats.sessions.reduce((sum, s) => sum + s.requestCount, 0);
+        
+        // Конвертируем Set в массив для JSON
         dailyStats.uniqueIPs = Array.from(dailyStats.uniqueIPs);
         
+        // Сохраняем
         saveStats(stats);
+        
         console.log(`💾 Stats flushed: ${activeSessions.size} active sessions`);
     } catch (err) {
         console.error('❌ Error flushing stats:', err);
     }
 };
 
+// Сохраняем статистику каждые 5 минут
 setInterval(flushStats, 5 * 60 * 1000);
 
+// Закрытие старых сессий (неактивных более 30 минут)
 const cleanupSessions = () => {
     const now = new Date();
-    const timeout = 30 * 60 * 1000;
+    const timeout = 30 * 60 * 1000; // 30 минут
     
     activeSessions.forEach((session, sessionId) => {
         const lastActivity = new Date(session.lastActivity);
         if (now - lastActivity > timeout) {
-            console.log(`🔴 Closing session: ${sessionId}`);
+            console.log(`🔴 Closing session: ${sessionId} (inactive)`);
             activeSessions.delete(sessionId);
         }
     });
 };
 
+// Очистка старых сессий каждые 10 минут
 setInterval(cleanupSessions, 10 * 60 * 1000);
 
 // ============================================
-// API СТАТИСТИКИ
+// API ДЛЯ ПОЛУЧЕНИЯ СТАТИСТИКИ
 // ============================================
 
+// Получить статистику за определённую дату
 app.get('/api/stats/:date', (req, res) => {
     try {
+        const dateKey = req.params.date;
         const stats = readStats();
-        if (stats.daily[req.params.date]) {
-            res.json({ success: true, date: req.params.date, data: stats.daily[req.params.date] });
+        
+        if (stats.daily[dateKey]) {
+            res.json({
+                success: true,
+                date: dateKey,
+                data: stats.daily[dateKey]
+            });
         } else {
-            res.status(404).json({ success: false, message: 'No data for this date' });
+            res.status(404).json({
+                success: false,
+                message: 'No data for this date'
+            });
         }
     } catch (err) {
-        res.status(500).json({ success: false, error: err.message });
+        res.status(500).json({
+            success: false,
+            error: err.message
+        });
     }
 });
 
+// Получить всю статистику
 app.get('/api/stats', (req, res) => {
     try {
-        res.json({ success: true, data: readStats() });
+        const stats = readStats();
+        res.json({
+            success: true,
+            data: stats
+        });
     } catch (err) {
-        res.status(500).json({ success: false, error: err.message });
+        res.status(500).json({
+            success: false,
+            error: err.message
+        });
     }
 });
 
+// Получить активные сессии
 app.get('/api/sessions/active', (req, res) => {
     try {
-        res.json({ success: true, count: activeSessions.size, sessions: Array.from(activeSessions.values()) });
+        const sessions = Array.from(activeSessions.values());
+        res.json({
+            success: true,
+            count: sessions.length,
+            sessions
+        });
     } catch (err) {
-        res.status(500).json({ success: false, error: err.message });
+        res.status(500).json({
+            success: false,
+            error: err.message
+        });
     }
 });
 
 // ============================================
-// API ДЛЯ FAIRY-STOCKFISH (ПРАВИЛЬНАЯ ВЕРСИЯ)
+// API ДЛЯ FAIRY-STOCKFISH
 // ============================================
 
-const handleBestMove = async (req, res) => {
-    console.log('📩 Received FEN:', req.body.fen);
-    
-    const { fen, depth = 10 } = req.body;
+// Функция обработки запроса на лучший ход
+const handleBestMove = (req, res) => {
+    const { fen, depth } = req.body;
     
     if (!fen) {
         return res.status(400).json({ error: 'FEN is required' });
     }
-
-    try {
-        const enginePath = getEnginePath();
-        console.log(`🎯 Starting engine: ${enginePath}`);
+    
+    const effectiveDepth = depth || 10;
+    const enginePath = getEnginePath();
+    
+    console.log(`🎯 Starting engine: ${enginePath}`);
+    
+    const fairyStockfish = spawn(enginePath, []);
+    
+    let output = '';
+    let bestMove = null;
+    
+    fairyStockfish.stdout.on('data', (data) => {
+        output += data.toString();
+        const lines = output.split('\n');
         
-        const engine = spawn(enginePath, [], { stdio: ['pipe', 'pipe', 'pipe'] });
-
-        let bestMove = null;
-        let analysis = '';
-
-        // Команды для движка с правильным вариантом
-        const commands = [
-            'uci',
-            'setoption name UCI_Variant value chessdragon',
-            `setoption name VariantPath value ${path.join(__dirname, 'variants', 'chessdragon.ini')}`,
-            `position fen ${fen}`,
-            `go depth ${depth}`
-        ];
-
-        console.log('📝 Commands:', commands);
-
-        for (const cmd of commands) {
-            engine.stdin.write(cmd + '\n');
+        for (const line of lines) {
+            if (line.startsWith('bestmove')) {
+                const parts = line.split(' ');
+                bestMove = parts[1];
+            }
         }
-
-        engine.stdout.on('data', (data) => {
-            const output = data.toString();
-            console.log('Engine output:', output);
-            analysis += output;
-            
-            if (output.includes('bestmove')) {
-                const match = output.match(/bestmove\s+(\S+)/);
-                if (match) {
-                    bestMove = match[1];
-                    console.log('✅ Best move:', bestMove);
-                    engine.stdin.write('quit\n');
-                    
-                    if (!res.headersSent) {
-                        res.json({ 
-                            bestMove, 
-                            analysis: analysis.split('\n').filter(line => line.trim()) 
-                        });
-                    }
-                }
-            }
-        });
-
-        engine.stderr.on('data', (data) => {
-            console.error('Engine stderr:', data.toString());
-        });
-
-        engine.on('close', (code) => {
-            console.log(`Engine closed with code ${code}`);
-            if (!bestMove && !res.headersSent) {
-                res.status(500).json({ error: 'Engine closed without best move', analysis });
-            }
-        });
-
-        engine.on('error', (error) => {
-            console.error('❌ Engine error:', error);
-            if (!res.headersSent) {
-                res.status(500).json({ error: `Engine error: ${error.message}` });
-            }
-        });
-
-        // Таймаут 30 секунд
-        setTimeout(() => {
-            if (!bestMove && !res.headersSent) {
-                console.log('⏱️ Engine timeout');
-                engine.kill();
-                res.status(500).json({ error: 'Engine timeout' });
-            }
-        }, 30000);
-
-    } catch (error) {
-        console.error('❌ Server error:', error);
-        res.status(500).json({ error: `Server error: ${error.message}` });
-    }
+    });
+    
+    fairyStockfish.on('error', (err) => {
+        console.error('❌ Engine error:', err);
+        res.status(500).json({ error: 'Engine failed to start: ' + err.message });
+    });
+    
+    fairyStockfish.on('close', (code) => {
+        if (bestMove) {
+            console.log(`✅ Best move: ${bestMove}`);
+            res.json({ bestMove });
+        } else {
+            console.error('❌ No best move found');
+            res.status(500).json({ error: 'Failed to get best move' });
+        }
+    });
+    
+    fairyStockfish.stdin.write('uci\n');
+    fairyStockfish.stdin.write('setoption name UCI_Variant value chess\n');
+    fairyStockfish.stdin.write(`position fen ${fen}\n`);
+    fairyStockfish.stdin.write(`go depth ${effectiveDepth}\n`);
+    fairyStockfish.stdin.end();
 };
 
 // Два маршрута для обратной совместимости
+app.post('/api/get-best-move', handleBestMove);
 app.post('/get-best-move', handleBestMove);
 
 // ============================================
-// СТАТИЧЕСКИЕ ФАЙЛЫ
+// РАЗДАЧА СТАТИЧЕСКИХ ФАЙЛОВ (ПОСЛЕ API)
 // ============================================
 
 app.use(express.static(path.join(__dirname, '../frontend')));
@@ -315,18 +343,19 @@ app.use(express.static(path.join(__dirname, '../frontend')));
 app.listen(PORT, () => {
     console.log(`✅ Server running on port ${PORT}`);
     console.log(`📊 Statistics enabled`);
-    console.log(`📁 Stats: ${statsFilePath}`);
-    console.log(`🎯 Engine: ${getEnginePath()}`);
+    console.log(`📁 Stats file: ${statsFilePath}`);
+    console.log(`🎯 Engine path: ${getEnginePath()}`);
 });
 
+// Сохранение статистики при выключении сервера
 process.on('SIGINT', () => {
-    console.log('\n🛑 Shutting down...');
+    console.log('\n🛑 Shutting down server...');
     flushStats();
     process.exit(0);
 });
 
 process.on('SIGTERM', () => {
-    console.log('\n🛑 Shutting down...');
+    console.log('\n🛑 Shutting down server...');
     flushStats();
     process.exit(0);
 });
