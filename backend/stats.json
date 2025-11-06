@@ -5,6 +5,6 @@
   },
   "2025-11-06": {
     "GET * 200": 12,
-    "POST /get-best-move 200": 16
+    "POST /get-best-move 200": 17
   }
 }
