@@ -63,7 +63,6 @@ const getDateKey = (date = new Date()) => {
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '../frontend')));
 
 // ============================================
 // MIDDLEWARE ДЛЯ ОТСЛЕЖИВАНИЯ ЗАПРОСОВ
@@ -114,6 +113,8 @@ app.use((req, res, next) => {
     next();
 });
 
+
+app.use(express.static(path.join(__dirname, '../frontend')));
 // ============================================
 // СОХРАНЕНИЕ СТАТИСТИКИ ПЕРИОДИЧЕСКИ
 // ============================================
