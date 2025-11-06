@@ -271,7 +271,7 @@ app.use(express.static(path.join(__dirname, '../frontend')));
 // ============================================
 
 // Получить лучший ход от движка
-app.post('/api/get-best-move', (req, res) => {
+app.post('/get-best-move', (req, res) => {
     const { fen, depth } = req.body;
     
     if (!fen) {
