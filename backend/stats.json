@@ -1,5 +1,10 @@
 {
   "2025-11-05": {
-    "POST /get-best-move 200": 6
+    "POST /get-best-move 200": 6,
+    "GET * 200": 8
+  },
+  "2025-11-06": {
+    "GET * 200": 12,
+    "POST /get-best-move 200": 16
   }
 }

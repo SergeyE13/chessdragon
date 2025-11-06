@@ -488,7 +488,41 @@
 		.promotion-piece-btn:active {
 			transform: scale(0.95);
 		}
+		
+		/* кнопка показать позицию */
+		.position-display {
+			margin-top: 10px;
+			padding: 10px;
+			background: #f8f9fa;
+			border-radius: 8px;
+			display: none;
+		}
 
+		.position-display.active {
+			display: block !important;  /* Добавили !important */
+		}		
+
+		.position-textarea {
+			width: 100%;
+			min-height: 100px;
+			padding: 10px;
+			border: 2px solid #3498db;
+			border-radius: 6px;
+			font-family: 'Courier New', monospace;
+			font-size: 12px;
+			resize: vertical;
+			box-sizing: border-box;
+			color: #333;
+			background: white;
+		}
+
+		.position-textarea:focus {
+			outline: none;
+			border-color: #2980b9;
+			box-shadow: 0 0 5px rgba(52, 152, 219, 0.5);
+		}
+		
+		/*--блок для телефона--*/
 		@media (max-width: 480px) {
 			.captured-pieces-container {
 				margin: 3px 0;
@@ -603,6 +637,20 @@
                 <button onclick="newGame()">Новая игра</button>
                 <button onclick="flipBoard()">Сменить цвет</button>
                 <button onclick="undoMove()">Отменить ход</button>
+				<button onclick="togglePositionDisplay()" id="position-toggle-btn" class="control-btn">
+					Показать позицию
+				</button>
+
+				<div id="position-display" class="position-display">
+					<textarea 
+						id="position-input" 
+						class="position-textarea" 
+						placeholder="Введите FEN позицию..."
+						onchange="onPositionChanged()"
+						oninput="onPositionChanged()"
+					></textarea>
+				</div>
+				
             </div>
             
             <div class="control-group">
@@ -661,7 +709,15 @@
                 <div id="board"></div>
             </div>
 			
-			<!-- НОВЫЙ блок под доской -->
+			<!-- Блок выбора фигуры -->
+			<div id="promotion-modal" class="promotion-modal">
+				<div class="promotion-content">
+					<h3>Выберите фигуру</h3>
+					<div class="promotion-pieces" id="promotion-pieces"></div>
+				</div>
+			</div>			
+			
+			<!-- блок срубленных фигур под доской -->
 			<div class="captured-pieces-container">
 				<div id="white-captured" class="captured-list-inline"></div>
 				<div class="captured-divider"></div>
@@ -679,10 +735,10 @@
     </div>	
 
     <script type="module">
-        //const API_URL = 'http://localhost:3000';
-	//const API_URL = `http://${window.location.hostname}:3000`;
-	//const API_URL = `http://gofra.ddns.net:3000`;
-	const API_URL = 'https://chessdragon.onrender.com';
+		//const API_URL = `http://${window.location.hostname}:3000`;
+		//const API_URL = `http://gofra.ddns.net:3000`;
+		//const API_URL = 'http://localhost:3000';
+		const API_URL = 'https://chessdragon.onrender.com';
 
         let board = null;
         let ffish = null;
@@ -698,8 +754,10 @@
         let moveHistory = [];
 		let capturedByWhite = [];
 		let capturedByBlack = [];	
-		let pendingPromotionMove = null;		
-
+		let positionDisplayVisible = false;
+		let originalFen = '';  // Для отслеживания изменений
+		let pendingPromotionMove = null;
+		
 		const difficultySettings = {
 			0: { depth: 2, name: 'Новичок' },  // НОВЫЙ уровень с минимакс
 			1: { depth: 1, name: 'Уровень 1 (800)' },
@@ -775,6 +833,8 @@ pieceValue = d:310
                 selectedSquare = null;
                 selectedDragon = null;
                 moveHistory = [];
+				positionDisplayVisible = false;
+				originalFen = '';
                 
                 gameReady = true;
                 
@@ -783,7 +843,17 @@ pieceValue = d:310
                 updateEvaluation();
                 updateStatus();
                 updateCoordinates();
-                
+
+				const display = document.getElementById('position-display');
+				if (display) display.classList.remove('active');
+				const btn = document.getElementById('position-toggle-btn');
+				if (btn) {
+					btn.textContent = 'Показать позицию';
+					btn.style.background = '';
+				}
+				const textarea = document.getElementById('position-input');
+				if (textarea) textarea.value = '';
+            
                 if (playerColor === 'black') {
                     setTimeout(() => makeComputerMove(), 500);
                 }
@@ -980,10 +1050,11 @@ pieceValue = d:310
             
             const currentTurn = safeBoardCall(() => board.turn(), true);
 			
-			pendingPromotionMove = null;  // ← ДОБАВИТЬ
+			//скрываем меню выбора
+			pendingPromotionMove = null;  
 			const modal = document.getElementById('promotion-modal');
 			if (modal) {
-				modal.classList.remove('active');  // ← ДОБАВИТЬ
+				modal.classList.remove('active');  // ← скрываем
 			}			
 
             const fenBefore = safeBoardCall(() => board.fen(), '');
@@ -1041,8 +1112,9 @@ pieceValue = d:310
             
             updateBoard();
             updatePockets();
-			updateCapturedPieces();  // НОВАЯ функция			
+			updateCapturedPieces();  		
             updateEvaluation();
+			updatePositionDisplay();
             
             const notation = formatMoveNotation(move, fenBefore);
             const moveColor = currentTurn ? 'white' : 'black';
@@ -1137,10 +1209,12 @@ pieceValue = d:310
                 
                 lastMoveSquares = { from, to };
                 
+				//обновление окон
                 updateBoard();
                 updatePockets();
-				updateCapturedPieces();  // НОВАЯ функция				
+				updateCapturedPieces(); 				
                 updateEvaluation();
+				updatePositionDisplay();
                 
                 const notation = formatMoveNotation(move, fenBefore);
                 const moveColor = turnBeforeMove ? 'white' : 'black';
@@ -1668,6 +1742,60 @@ function highlightDragonDrops() {
             
             updateBoard();
         }
+		
+		// Установка позиции из textarea
+		function setPositionFromInput() {
+			const textarea = document.getElementById('position-input');
+			const newFen = textarea.value.trim();
+			
+			if (!newFen) {
+				alert('Введите FEN позицию');
+				return;
+			}
+			
+			try {
+				board.delete();
+				const newBoard = new ffish.Board('Chess_dragon', newFen);
+				board = newBoard;
+				
+				originalFen = newFen;
+				updateBoard();
+				updatePockets();
+				updateEvaluation();
+				updateStatus();
+				
+				const btn = document.getElementById('position-toggle-btn');
+				btn.textContent = 'Скрыть позицию';
+				//btn.style.background = '#e74c3c';
+				btn.onclick = function() {
+					togglePositionDisplay();
+				};
+				
+				alert('✓ Позиция установлена');
+			} catch (error) {
+				alert('❌ Ошибка: неверная FEN нотация');
+			}
+		}
+
+		// Обновление FEN при каждом ходе
+		function updatePositionDisplay() {
+			const display = document.getElementById('position-display');
+			const textarea = document.getElementById('position-input');
+			const btn = document.getElementById('position-toggle-btn');
+			
+			if (positionDisplayVisible && display.classList.contains('active')) {
+				const currentFen = safeBoardCall(() => board.fen());
+				originalFen = currentFen;
+				textarea.value = currentFen;
+				
+				btn.textContent = 'Скрыть позицию';
+				//btn.style.background = '#e74c3c';
+				btn.onclick = function() {
+					togglePositionDisplay();
+				};
+			}
+		}
+		
 
         window.newGame = function() {
             moveHistoryData = [];
@@ -1720,13 +1848,64 @@ function highlightDragonDrops() {
                 updateBoard();
                 updatePockets();
                 updateEvaluation();
+				updatePositionDisplay();
                 updateStatus();
                 renderMoveHistory();
+				
             } catch (error) {
                 console.error('Undo error:', error);
                 alert('Ошибка при отмене хода');
             }
         };
+
+		// Функция переключения видимости (ГЛОБАЛЬНАЯ)
+		window.togglePositionDisplay = function() {
+			const display = document.getElementById('position-display');
+			const textarea = document.getElementById('position-input');
+			const btn = document.getElementById('position-toggle-btn');
+			
+			if (!positionDisplayVisible) {
+				// Показываем позицию
+				const currentFen = safeBoardCall(() => board.fen());
+				originalFen = currentFen;
+				textarea.value = currentFen;
+				
+				display.classList.add('active');
+				positionDisplayVisible = true;
+				btn.textContent = 'Скрыть позицию';
+				//btn.style.background = '#e74c3c';  // Красная кнопка
+			} else {
+				// Скрываем позицию
+				display.classList.remove('active');
+				positionDisplayVisible = false;
+				btn.textContent = 'Показать позицию';
+				btn.style.background = '';  // Вернуть оригинальный цвет
+				originalFen = '';
+			}
+		}
+
+		// Отслеживание изменений в textarea
+		window.onPositionChanged = function() {
+			const textarea = document.getElementById('position-input');
+			const btn = document.getElementById('position-toggle-btn');
+			const currentFen = safeBoardCall(() => board.fen());
+			
+			if (textarea.value !== originalFen && textarea.value !== currentFen) {
+				// Позиция изменена
+				btn.textContent = 'Установить позицию';
+				btn.style.background = '#27ae60';  // Зелёная кнопка
+				btn.onclick = function() {
+					setPositionFromInput();
+				};
+			} else {
+				// Позиция вернулась к оригиналу
+				btn.textContent = 'Скрыть позицию';
+				//btn.style.background = '#e74c3c';  // Красная кнопка
+				btn.onclick = function() {
+					togglePositionDisplay();
+				};
+			}
+		}
 
         window.setDifficulty = function(level) {
             currentDifficulty = parseInt(level);
@@ -1753,14 +1932,6 @@ function highlightDragonDrops() {
 		});		
 		
     </script>
-
-	<!-- ПРАВИЛЬНОЕ РАСПОЛОЖЕНИЕ: -->
-	<div id="promotion-modal" class="promotion-modal">
-		<div class="promotion-content">
-			<h3>Выберите фигуру</h3>
-			<div class="promotion-pieces" id="promotion-pieces"></div>
-		</div>
-	</div>
 	
 </body>
 </html>
