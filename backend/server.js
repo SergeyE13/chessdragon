@@ -232,13 +232,16 @@ const handleBestMove = async (req, res) => {
         // Команды для движка с правильным вариантом
         const commands = [
             'uci',
-            'setoption name UCI_Variant value chessdragon',
             `setoption name VariantPath value ${path.join(__dirname, 'variants', 'chessdragon.ini')}`,
+			'setoption name UCI_Variant value chessdragon',
             `position fen ${fen}`,
             `go depth ${depth}`
         ];
 
         console.log('📝 Commands:', commands);
+		//temporary
+		//console.log('VARIANT PATH:', path.resolve(__dirname, 'variants', 'chessdragon.ini'));
+		
 
         for (const cmd of commands) {
             engine.stdin.write(cmd + '\n');
@@ -248,7 +251,8 @@ const handleBestMove = async (req, res) => {
             const output = data.toString();
             console.log('Engine output:', output);
             analysis += output;
-            
+ 
+			// Ищем строку с лучшим ходом 
             if (output.includes('bestmove')) {
                 const match = output.match(/bestmove\s+(\S+)/);
                 if (match) {
@@ -267,13 +271,21 @@ const handleBestMove = async (req, res) => {
         });
 
         engine.stderr.on('data', (data) => {
-            console.error('Engine stderr:', data.toString());
+            const errorOutput = data.toString();
+            console.error('❌ Engine stderr:', errorOutput);
+            analysis += '\nSTDERR: ' + errorOutput;
         });
 
         engine.on('close', (code) => {
             console.log(`Engine closed with code ${code}`);
             if (!bestMove && !res.headersSent) {
-                res.status(500).json({ error: 'Engine closed without best move', analysis });
+                console.error('❌ No best move found. Analysis:', analysis);
+                res.status(500).json({ 
+                    error: 'Engine closed without best move', 
+                    code,
+                    analysis: analysis.split('\n').filter(line => line.trim()),
+                    fen: fen
+                });
             }
         });
 
@@ -284,14 +296,19 @@ const handleBestMove = async (req, res) => {
             }
         });
 
-        // Таймаут 30 секунд
+        // Таймаут 60 секунд (увеличен для отладки)
         setTimeout(() => {
             if (!bestMove && !res.headersSent) {
                 console.log('⏱️ Engine timeout');
+                console.log('Analysis at timeout:', analysis);
                 engine.kill();
-                res.status(500).json({ error: 'Engine timeout' });
+                res.status(500).json({ 
+                    error: 'Engine timeout',
+                    analysis: analysis.split('\n').filter(line => line.trim()),
+                    fen: fen
+                });
             }
-        }, 30000);
+        }, 60000);
 
     } catch (error) {
         console.error('❌ Server error:', error);
