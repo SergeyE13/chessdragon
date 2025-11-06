@@ -4,368 +4,330 @@ const path = require('path');
 const fs = require('fs');
 const cors = require('cors');
 
-const statsFilePath = path.join(__dirname, 'stats.json');
-
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Функция для чтения статистики
+// Файл для хранения статистики
+const statsFilePath = path.join(__dirname, 'stats.json');
+
+// Хранилище активных сессий (в памяти)
+const activeSessions = new Map();
+
+// ============================================
+// УТИЛИТЫ ДЛЯ РАБОТЫ СО СТАТИСТИКОЙ
+// ============================================
+
+// Чтение статистики из файла
 const readStats = () => {
     try {
         if (fs.existsSync(statsFilePath)) {
             const data = fs.readFileSync(statsFilePath, 'utf8');
-            console.log('📊 Stats file content:', data);
             return JSON.parse(data);
-        } else {
-            console.log('📊 Stats file does not exist');
-            return {};
         }
+        return { daily: {}, sessions: [] };
     } catch (err) {
         console.error('❌ Error reading stats:', err);
-        return {};
+        return { daily: {}, sessions: [] };
     }
 };
 
-// Функция для сохранения статистики
-const dumpStats = (stats) => {
+// Сохранение статистики в файл
+const saveStats = (stats) => {
     try {
         fs.writeFileSync(statsFilePath, JSON.stringify(stats, null, 2));
-        console.log('💾 Stats saved successfully');
+        console.log('💾 Stats saved');
     } catch (err) {
         console.error('❌ Error saving stats:', err);
     }
 };
 
+// Получение IP адреса клиента
+const getClientIP = (req) => {
+    return req.headers['x-forwarded-for']?.split(',')[0] || 
+           req.headers['x-real-ip'] || 
+           req.connection.remoteAddress ||
+           req.socket.remoteAddress ||
+           'unknown';
+};
+
+// Создание уникального ID сессии
+const createSessionId = (ip) => {
+    return `${ip}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+};
+
+// Получение даты в формате YYYY-MM-DD
+const getDateKey = (date = new Date()) => {
+    return date.toISOString().split('T')[0];
+};
+
+// Middleware
 app.use(cors());
 app.use(express.json());
-
-// Раздаем статические файлы фронтенда
 app.use(express.static(path.join(__dirname, '../frontend')));
 
+// ============================================
+// MIDDLEWARE ДЛЯ ОТСЛЕЖИВАНИЯ ЗАПРОСОВ
+// ============================================
 
-function getEnginePath() {
-    if (process.platform === 'win32') {
-        return path.join(__dirname, 'engines', 'fairy-stockfish-largeboard_x86-64.exe');
-    } else {
-        return path.join(__dirname, 'engines', 'fairy-stockfish-largeboard_x86-64');
-    }
-}
-
-// Middleware для подсчета запросов
 app.use((req, res, next) => {
-    const originalSend = res.send;
-    const originalJson = res.json;
+    const ip = getClientIP(req);
+    const userAgent = req.headers['user-agent'] || 'unknown';
+    const now = new Date();
+    const dateKey = getDateKey(now);
+    const method = req.method;
+    const url = req.originalUrl || req.url;
     
-    res.on('finish', () => {
-        try {
-            const stats = readStats();
-            const today = new Date().toISOString().split('T')[0];
-            const route = req.route ? req.route.path : req.path;
-            const event = `${req.method} ${route} ${res.statusCode}`;
-            
-            console.log(`📈 Recording event: ${event} for date: ${today}`);
-            
-            // Инициализация счетчиков
-            if (!stats[today]) {
-                stats[today] = {};
-                console.log(`🆕 Created new day: ${today}`);
-            }
-            if (!stats[today][event]) {
-                stats[today][event] = 0;
-            }
-            
-            stats[today][event] += 1;
-            console.log(`🔢 Updated count for ${event}: ${stats[today][event]}`);
-            
-            dumpStats(stats);
-            console.log('📋 Current stats:', stats);
-            
-        } catch (error) {
-            console.error('❌ Error in stats middleware:', error);
-        }
+    // Создаём или получаем sessionId
+    let sessionId = req.headers['x-session-id'];
+    
+    if (!sessionId || !activeSessions.has(sessionId)) {
+        // Новая сессия
+        sessionId = createSessionId(ip);
+        activeSessions.set(sessionId, {
+            id: sessionId,
+            ip,
+            userAgent,
+            startTime: now.toISOString(),
+            lastActivity: now.toISOString(),
+            requests: [],
+            requestCount: 0
+        });
+        
+        console.log(`🔵 New session: ${sessionId} from ${ip}`);
+    }
+    
+    // Обновляем сессию
+    const session = activeSessions.get(sessionId);
+    session.lastActivity = now.toISOString();
+    session.requestCount++;
+    session.requests.push({
+        method,
+        url,
+        timestamp: now.toISOString()
     });
+    
+    // Добавляем sessionId в ответ
+    res.setHeader('X-Session-ID', sessionId);
+    
+    console.log(`📊 ${method} ${url} | Session: ${sessionId} | IP: ${ip}`);
+    
     next();
 });
 
-app.post('/get-best-move', async (req, res) => {
-    console.log('Received request with FEN:', req.body.fen);
+// ============================================
+// СОХРАНЕНИЕ СТАТИСТИКИ ПЕРИОДИЧЕСКИ
+// ============================================
+
+// Функция сохранения статистики
+const flushStats = () => {
+    try {
+        const stats = readStats();
+        const now = new Date();
+        const dateKey = getDateKey(now);
+        
+        // Инициализируем дневную статистику
+        if (!stats.daily[dateKey]) {
+            stats.daily[dateKey] = {
+                date: dateKey,
+                totalRequests: 0,
+                uniqueIPs: new Set(),
+                sessions: []
+            };
+        }
+        
+        const dailyStats = stats.daily[dateKey];
+        
+        // Обрабатываем активные сессии
+        activeSessions.forEach((session, sessionId) => {
+            // Добавляем IP в Set уникальных IP
+            dailyStats.uniqueIPs.add(session.ip);
+            
+            // Проверяем есть ли уже эта сессия в дневной статистике
+            const existingSession = dailyStats.sessions.find(s => s.id === sessionId);
+            
+            if (!existingSession) {
+                // Новая сессия - добавляем
+                dailyStats.sessions.push({
+                    id: sessionId,
+                    ip: session.ip,
+                    userAgent: session.userAgent,
+                    startTime: session.startTime,
+                    endTime: session.lastActivity,
+                    requestCount: session.requestCount,
+                    requests: session.requests
+                });
+            } else {
+                // Обновляем существующую сессию
+                existingSession.endTime = session.lastActivity;
+                existingSession.requestCount = session.requestCount;
+                existingSession.requests = session.requests;
+            }
+            
+            dailyStats.totalRequests += session.requestCount;
+        });
+        
+        // Конвертируем Set в массив для JSON
+        dailyStats.uniqueIPs = Array.from(dailyStats.uniqueIPs);
+        
+        // Сохраняем
+        saveStats(stats);
+        
+        console.log(`💾 Stats flushed: ${activeSessions.size} active sessions`);
+    } catch (err) {
+        console.error('❌ Error flushing stats:', err);
+    }
+};
+
+// Сохраняем статистику каждые 5 минут
+setInterval(flushStats, 5 * 60 * 1000);
+
+// Закрытие старых сессий (неактивных более 30 минут)
+const cleanupSessions = () => {
+    const now = new Date();
+    const timeout = 30 * 60 * 1000; // 30 минут
     
-    const { fen, depth = 10 } = req.body;
+    activeSessions.forEach((session, sessionId) => {
+        const lastActivity = new Date(session.lastActivity);
+        if (now - lastActivity > timeout) {
+            console.log(`🔴 Closing session: ${sessionId} (inactive)`);
+            activeSessions.delete(sessionId);
+        }
+    });
+};
+
+// Очистка старых сессий каждые 10 минут
+setInterval(cleanupSessions, 10 * 60 * 1000);
+
+// ============================================
+// API ДЛЯ ПОЛУЧЕНИЯ СТАТИСТИКИ
+// ============================================
+
+// Получить статистику за определённую дату
+app.get('/api/stats/:date', (req, res) => {
+    try {
+        const dateKey = req.params.date;
+        const stats = readStats();
+        
+        if (stats.daily[dateKey]) {
+            res.json({
+                success: true,
+                date: dateKey,
+                data: stats.daily[dateKey]
+            });
+        } else {
+            res.status(404).json({
+                success: false,
+                message: 'No data for this date'
+            });
+        }
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            error: err.message
+        });
+    }
+});
+
+// Получить всю статистику
+app.get('/api/stats', (req, res) => {
+    try {
+        const stats = readStats();
+        res.json({
+            success: true,
+            data: stats
+        });
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            error: err.message
+        });
+    }
+});
+
+// Получить активные сессии
+app.get('/api/sessions/active', (req, res) => {
+    try {
+        const sessions = Array.from(activeSessions.values());
+        res.json({
+            success: true,
+            count: sessions.length,
+            sessions
+        });
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            error: err.message
+        });
+    }
+});
+
+// ============================================
+// СУЩЕСТВУЮЩИЙ API ДЛЯ FAIRY-STOCKFISH
+// ============================================
+
+// Получить лучший ход от движка
+app.post('/api/get-best-move', (req, res) => {
+    const { fen, depth } = req.body;
     
     if (!fen) {
         return res.status(400).json({ error: 'FEN is required' });
     }
-
-    try {
-        const engine = spawn(getEnginePath(), [], { 
-            stdio: ['pipe', 'pipe', 'pipe'] 
-        });
-
-        let bestMove = null;
-        let analysis = '';
-        let engineReady = false;
-        let positionSet = false;
-
-        // Обработка вывода движка
-        engine.stdout.on('data', (data) => {
-            const output = data.toString();
-            console.log('Engine output:', output);
-            analysis += output;
-            
-            if (output.includes('uciok')) {
-                engineReady = true;
-                console.log('Engine is ready');
-                
-                // После получения uciok настраиваем вариант
-                const setupCommands = [
-                    `setoption name VariantPath value ${path.join(__dirname, 'variants', 'chessdragon.ini')}`,
-                    `setoption name UCI_Variant value chessdragon`,
-                    'isready'
-                ];
-                
-                setupCommands.forEach(cmd => {
-                    console.log('Sending setup command:', cmd);
-                    engine.stdin.write(cmd + '\n');
-                });
-            }
-            
-            if (output.includes('readyok') && !positionSet) {
-                positionSet = true;
-                console.log('Engine is ready for position');
-                
-                // Устанавливаем позицию и запускаем анализ
-                const analysisCommands = [
-                    `position fen ${fen}`,
-                    `go depth ${depth}`
-                ];
-                
-                analysisCommands.forEach(cmd => {
-                    console.log('Sending analysis command:', cmd);
-                    engine.stdin.write(cmd + '\n');
-                });
-            }
-            
-            // Ищем строку с лучшим ходом
-            if (output.includes('bestmove')) {
-                const match = output.match(/bestmove\s+(\S+)/);
-                if (match) {
-                    bestMove = match[1];
-                    console.log('Found best move:', bestMove);
-                    
-                    // Отправляем ответ
-                    res.json({ 
-                        bestMove, 
-                        analysis: analysis.split('\n').filter(line => line.trim()) 
-                    });
-                    
-                    // Завершаем движок
-                    engine.stdin.write('quit\n');			
-					
-                }
-            }
-            
-            // Обработка ошибок движка
-            if (output.includes('Illegal move') || output.includes('Invalid') || output.includes('Error')) {
-                console.error('Engine error detected:', output);
-                if (!res.headersSent) {
-                    res.status(400).json({ 
-                        error: 'Invalid position or move',
-                        details: output,
-                        analysis: analysis.split('\n').filter(line => line.trim())
-                    });
-                }
-                engine.stdin.write('quit\n');
-            }
-        });
-
-        engine.stderr.on('data', (data) => {
-            console.error('Engine stderr:', data.toString());
-        });
-
-        engine.on('close', (code) => {
-            console.log(`Engine process exited with code ${code}`);
-            if (!bestMove && !res.headersSent) {
-                res.status(500).json({ 
-                    error: 'Engine closed without providing best move',
-                    exitCode: code,
-                    analysis: analysis.split('\n').filter(line => line.trim())
-                });
-            }
-        });
-
-        engine.on('error', (error) => {
-            console.error('Engine spawn error:', error);
-            if (!res.headersSent) {
-                res.status(500).json({ error: `Engine error: ${error.message}` });
-            }
-        });
-
-        // Инициализация движка
-        console.log('Starting engine initialization...');
-        engine.stdin.write('uci\n');
-
-        // Таймаут
-        setTimeout(() => {
-            if (!bestMove && !res.headersSent) {
-                console.log('Engine timeout reached');
-                engine.kill();
-                res.status(500).json({ error: 'Engine timeout - no response within 30 seconds' });
-            }
-        }, 30000);
-
-    } catch (error) {
-        console.error('Server error:', error);
-        if (!res.headersSent) {
-            res.status(500).json({ error: `Server error: ${error.message}` });
-        }
-    }
-});
-
-// Добавьте в server.js
-app.get('/test-variant', (req, res) => {
-    const engine = spawn(getEnginePath(), [], { 
-        stdio: ['pipe', 'pipe', 'pipe'] 
+    
+    const effectiveDepth = depth || 10;
+    
+    const fairyStockfish = spawn('./fairy-stockfish/fairy-stockfish', [], {
+        cwd: __dirname
     });
-
+    
     let output = '';
+    let bestMove = null;
     
-    const commands = [
-        'uci',
-        `setoption name VariantPath value ${path.join(__dirname, 'variants', 'chessdragon.ini')}`,
-        `setoption name UCI_Variant value chessdragon`,
-        'isready',
-        'position startpos',
-        'go depth 3'
-    ];
-
-    commands.forEach(cmd => engine.stdin.write(cmd + '\n'));
-
-    engine.stdout.on('data', (data) => {
+    fairyStockfish.stdout.on('data', (data) => {
         output += data.toString();
-        if (data.toString().includes('bestmove')) {
-            engine.stdin.write('quit\n');
-            res.json({ status: 'Variant works correctly', output: output.split('\n') });
-        }
-    });
-
-    setTimeout(() => {
-        engine.kill();
-        res.status(500).json({ error: 'Variant test timeout', output: output.split('\n') });
-    }, 10000);
-});
-
-// Ваши API роуты
-app.get('/api/hello', (req, res) => {
-  res.json({ message: 'Hello from Render!' });
-});
-
-// Endpoint для проверки файловой системы
-app.get('/api/debug-fs', (req, res) => {
-    const files = fs.readdirSync(__dirname);
-    const fileInfo = files.map(file => {
-        const filePath = path.join(__dirname, file);
-        try {
-            const stats = fs.statSync(filePath);
-            return {
-                name: file,
-                isFile: stats.isFile(),
-                size: stats.size,
-                modified: stats.mtime
-            };
-        } catch (err) {
-            return { name: file, error: err.message };
-        }
-    });
-    
-    res.json({
-        currentDir: __dirname,
-        files: fileInfo,
-        statsFileExists: fs.existsSync(statsFilePath),
-        statsFileContent: readStats()
-    });
-});
-
-// Endpoint для принудительной записи тестовых данных
-app.post('/api/test-stats', (req, res) => {
-    const stats = readStats();
-    const today = new Date().toISOString().split('T')[0];
-    
-    if (!stats[today]) stats[today] = {};
-    
-    // Добавляем тестовые данные
-    stats[today]['GET /test-stats 200'] = (stats[today]['GET /test-stats 200'] || 0) + 1;
-    stats[today]['POST /get-best-move 200'] = (stats[today]['POST /get-best-move 200'] || 0) + 5;
-    
-    dumpStats(stats);
-    
-    res.json({
-        message: 'Test stats added',
-        currentStats: stats
-    });
-});
-
-// Добавьте endpoint для получения статистики
-app.get('/api/stats', (req, res) => {
-    res.json(readStats());
-});
-
-app.get('/admin/stats', (req, res) => {
-    res.sendFile(path.join(__dirname, '../frontend/stats.html'));
-});
-
-app.get('/admin/stats-debug', (req, res) => {
-    res.sendFile(path.join(__dirname, '../frontend/stats-debug.html'));
-});
-
-app.get('/api/stats-chart', (req, res) => {
-    const stats = readStats();
-    
-    // Подготовка данных за последние 7 дней
-    const dates = [];
-    const moveCounts = [];
-    
-    for (let i = 6; i >= 0; i--) {
-        const date = new Date();
-        date.setDate(date.getDate() - i);
-        const dateStr = date.toISOString().split('T')[0];
-        dates.push(dateStr);
+        const lines = output.split('\n');
         
-        const dayStats = stats[dateStr] || {};
-        const moves = dayStats['POST /get-best-move 200'] || 0;
-        moveCounts.push(moves);
-    }
-    
-    // Генерация URL для QuickChart
-    const chartUrl = `https://quickchart.io/chart?c={
-        type: 'line',
-        data: {
-            labels: ${JSON.stringify(dates)},
-            datasets: [{
-                label: 'Запросов лучшего хода',
-                data: ${JSON.stringify(moveCounts)},
-                borderColor: 'rgb(75, 192, 192)',
-                tension: 0.1
-            }]
-        },
-        options: {
-            title: {
-                display: true,
-                text: 'Активность пользователей за 7 дней'
+        for (const line of lines) {
+            if (line.startsWith('bestmove')) {
+                const parts = line.split(' ');
+                bestMove = parts[1];
             }
         }
-    }`;
+    });
     
-    res.redirect(chartUrl);
+    fairyStockfish.on('close', (code) => {
+        if (bestMove) {
+            res.json({ bestMove });
+        } else {
+            res.status(500).json({ error: 'Failed to get best move' });
+        }
+    });
+    
+    fairyStockfish.stdin.write('uci\n');
+    fairyStockfish.stdin.write('setoption name UCI_Variant value chess\n');
+    fairyStockfish.stdin.write(`position fen ${fen}\n`);
+    fairyStockfish.stdin.write(`go depth ${effectiveDepth}\n`);
+    fairyStockfish.stdin.end();
 });
 
-// Все остальные запросы отправляем на фронтенд
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../frontend/index.html'));
-});
+// ============================================
+// ЗАПУСК СЕРВЕРА
+// ============================================
 
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+    console.log(`✅ Server running on port ${PORT}`);
+    console.log(`📊 Statistics enabled`);
+    console.log(`📁 Stats file: ${statsFilePath}`);
+});
 
-//app.listen(3000, () => {
-//    console.log('Server running on http://localhost:3000');
+// Сохранение статистики при выключении сервера
+process.on('SIGINT', () => {
+    console.log('\n🛑 Shutting down server...');
+    flushStats();
+    process.exit(0);
+});
+
+process.on('SIGTERM', () => {
+    console.log('\n🛑 Shutting down server...');
+    flushStats();
+    process.exit(0);
 });
