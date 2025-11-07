@@ -8,6 +8,7 @@
     "chmod-engine": "chmod +x ./engines/fairy-stockfish-largeboard_x86-64"
   },
   "dependencies": {
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "express": "^4.21.2"
   },

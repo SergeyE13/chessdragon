@@ -33,17 +33,10 @@ const readStats = () => {
 
 const saveStats = (stats) => {
     try {
-        console.log('💾 Saving stats to:', statsFilePath);
         fs.writeFileSync(statsFilePath, JSON.stringify(stats, null, 2));
-        console.log('✅ Stats saved successfully');
-        
-        if (fs.existsSync(statsFilePath)) {
-            const fileSize = fs.statSync(statsFilePath).size;
-            console.log(`✅ File exists, size: ${fileSize} bytes`);
-        }
+        console.log('💾 Stats saved');
     } catch (err) {
         console.error('❌ Error saving stats:', err);
-        console.error('❌ Path:', statsFilePath);
     }
 };
 
@@ -127,19 +120,9 @@ app.use((req, res, next) => {
     // Обновляем активность
     session.lastActivity = now.toISOString();
     session.requestCount++;
-    
-    // Добавляем информацию о запросе (с FEN для /get-best-move)
-    const requestInfo = { method, url, timestamp: now.toISOString() };
-    
-    // Если это запрос к движку - добавляем FEN позицию
-    if (url.includes('/get-best-move') && req.body && req.body.fen) {
-        requestInfo.fen = req.body.fen;
-    }
-    
-    session.requests.push(requestInfo);
+    session.requests.push({ method, url, timestamp: now.toISOString() });
     
     console.log(`📊 ${method} ${url} | Session: ${session.id} | Requests: ${session.requestCount}`);
-   
     next();
 });
 
@@ -149,19 +132,9 @@ app.use((req, res, next) => {
 
 const flushStats = () => {
     try {
-        console.log('🔄 Flushing stats...');
         const stats = readStats();
         const now = new Date();
         const dateKey = getDateKey(now);
-        
-        console.log(`📅 Date key: ${dateKey}`);
-        console.log(`📊 Active sessions: ${activeSessions.size}`);
-        
-        // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: проверяем stats.daily ПЕРЕД использованием
-        if (!stats.daily) {
-            console.log('⚠️ stats.daily was undefined, creating empty object');
-            stats.daily = {};
-        }
         
         if (!stats.daily[dateKey]) {
             stats.daily[dateKey] = {
@@ -175,72 +148,60 @@ const flushStats = () => {
         const dailyStats = stats.daily[dateKey];
         
         // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: uniqueIPs ВСЕГДА массив после чтения из JSON
+        // Нужно КАЖДЫЙ РАЗ преобразовывать в Set
         if (!dailyStats.uniqueIPs) {
-            console.log('⚠️ uniqueIPs was null/undefined, creating new Set');
             dailyStats.uniqueIPs = new Set();
         } else if (Array.isArray(dailyStats.uniqueIPs)) {
-            console.log(`⚠️ uniqueIPs was Array (length: ${dailyStats.uniqueIPs.length}), converting to Set`);
             dailyStats.uniqueIPs = new Set(dailyStats.uniqueIPs);
         } else if (!(dailyStats.uniqueIPs instanceof Set)) {
-            console.log(`⚠️ uniqueIPs was ${typeof dailyStats.uniqueIPs}, creating new Set`);
             dailyStats.uniqueIPs = new Set();
         }
         
-        console.log(`📊 Processing ${activeSessions.size} active sessions...`);
+        console.log(`📊 uniqueIPs type: ${dailyStats.uniqueIPs.constructor.name}, size: ${dailyStats.uniqueIPs.size}`);
         
-        // ИСПРАВЛЕНО: итерируем по activeSessions правильно
-        // sessionKey - это ключ Map (ip_userAgent), session - значение
-        activeSessions.forEach((session, sessionKey) => {
-            dailyStats.uniqueIPs.add(session.ip);
-            
-            // Ищем существующую сессию по session.id
-            const existingSession = dailyStats.sessions.find(s => s.id === session.id);
+        activeSessions.forEach((session, sessionId) => {
+            dailyStats.uniqueIPs.add(session.ip);			
+			
+            const existingSession = dailyStats.sessions.find(s => s.id === sessionId);
             
             if (!existingSession) {
                 dailyStats.sessions.push({
-                    id: session.id,
+                    id: sessionId,
                     ip: session.ip,
+                    userAgent: session.userAgent,
                     startTime: session.startTime,
                     endTime: session.lastActivity,
                     requestCount: session.requestCount,
                     requests: session.requests.slice()
                 });
-                console.log(`📝 Added new session to daily stats: ${session.id}`);
             } else {
                 existingSession.endTime = session.lastActivity;
                 existingSession.requestCount = session.requestCount;
                 existingSession.requests = session.requests.slice();
-                console.log(`📝 Updated existing session: ${session.id}`);
             }
-
         });
         
         dailyStats.totalRequests = dailyStats.sessions.reduce((sum, s) => sum + s.requestCount, 0);
         dailyStats.uniqueIPs = Array.from(dailyStats.uniqueIPs);
         
         saveStats(stats);
-        console.log(`💾 Stats flushed: ${activeSessions.size} active sessions, ${dailyStats.sessions.length} in daily`);
+        console.log(`💾 Stats flushed: ${activeSessions.size} active sessions`);
     } catch (err) {
         console.error('❌ Error flushing stats:', err);
-        console.error('❌ Stack:', err.stack);
     }
 };
 
-// Сохраняем статистику каждые 30 секунд (для тестирования)
-setInterval(flushStats, 30 * 1000);
-
-// Первое сохранение через 5 секунд после запуска
-setTimeout(flushStats, 5000);
+setInterval(flushStats, 5 * 60 * 1000);
 
 const cleanupSessions = () => {
     const now = new Date();
     const timeout = 30 * 60 * 1000;
     
-    activeSessions.forEach((session, sessionKey) => {
+    activeSessions.forEach((session, sessionId) => {
         const lastActivity = new Date(session.lastActivity);
         if (now - lastActivity > timeout) {
-            console.log(`🔴 Closing session: ${session.id}`);
-            activeSessions.delete(sessionKey);
+            console.log(`🔴 Closing session: ${sessionId}`);
+            activeSessions.delete(sessionId);
         }
     });
 };
@@ -251,17 +212,10 @@ setInterval(cleanupSessions, 10 * 60 * 1000);
 // API СТАТИСТИКИ
 // ============================================
 
+// Получить статистику за определённую дату (базовая)
 app.get('/api/stats/:date', (req, res) => {
     try {
         const stats = readStats();
-        
-        if (!stats || !stats.daily) {
-            return res.status(404).json({ 
-                success: false, 
-                message: 'No statistics data available yet' 
-            });
-        }
-        
         if (stats.daily[req.params.date]) {
             res.json({ success: true, date: req.params.date, data: stats.daily[req.params.date] });
         } else {
@@ -272,17 +226,11 @@ app.get('/api/stats/:date', (req, res) => {
     }
 });
 
+// Получить детальную статистику за дату (с URL)
 app.get('/api/stats/detailed/:date', (req, res) => {
     try {
         const stats = readStats();
         const dateKey = req.params.date;
-        
-        if (!stats || !stats.daily) {
-            return res.status(404).json({ 
-                success: false, 
-                message: 'No statistics data available yet' 
-            });
-        }
         
         if (!stats.daily[dateKey]) {
             return res.status(404).json({ 
@@ -293,16 +241,17 @@ app.get('/api/stats/detailed/:date', (req, res) => {
         
         const dayStats = stats.daily[dateKey];
         
+        // Форматируем данные
         const detailedSessions = dayStats.sessions.map(session => ({
             id: session.id,
             ip: session.ip,
+            userAgent: session.userAgent,
             startTime: session.startTime,
             lastActivity: session.endTime,
             requestCount: session.requestCount,
             urls: session.requests.map(r => r.url),
             requests: session.requests
         }));
-
         
         res.json({
             success: true,
@@ -319,20 +268,10 @@ app.get('/api/stats/detailed/:date', (req, res) => {
     }
 });
 
+// Получить сводку по всем датам
 app.get('/api/stats/summary', (req, res) => {
     try {
-        flushStats(); // Принудительно сохраняем перед отправкой
-        
         const stats = readStats();
-        
-        if (!stats || !stats.daily) {
-            return res.json({
-                success: true,
-                totalDays: 0,
-                days: [],
-                message: 'No statistics collected yet'
-            });
-        }
         
         const summary = Object.keys(stats.daily).map(date => {
             const day = stats.daily[date];
@@ -354,18 +293,18 @@ app.get('/api/stats/summary', (req, res) => {
     }
 });
 
+// Получить всю статистику
 app.get('/api/stats', (req, res) => {
     try {
-        flushStats(); // Принудительно сохраняем
         res.json({ success: true, data: readStats() });
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
     }
 });
 
+// Получить активные сессии
 app.get('/api/sessions/active', (req, res) => {
     try {
-        flushStats(); // Принудительно сохраняем
         res.json({ success: true, count: activeSessions.size, sessions: Array.from(activeSessions.values()) });
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
@@ -373,7 +312,7 @@ app.get('/api/sessions/active', (req, res) => {
 });
 
 // ============================================
-// API ДЛЯ FAIRY-STOCKFISH
+// API ДЛЯ FAIRY-STOCKFISH (ПРАВИЛЬНАЯ ВЕРСИЯ)
 // ============================================
 
 const handleBestMove = async (req, res) => {
@@ -394,6 +333,7 @@ const handleBestMove = async (req, res) => {
         let bestMove = null;
         let analysis = '';
 
+        // Команды для движка с правильным вариантом
         const commands = [
             'uci',
             `setoption name VariantPath value ${path.join(__dirname, 'variants', 'chessdragon.ini')}`,
@@ -448,6 +388,7 @@ const handleBestMove = async (req, res) => {
             }
         });
 
+        // Таймаут 30 секунд
         setTimeout(() => {
             if (!bestMove && !res.headersSent) {
                 console.log('⏱️ Engine timeout');
@@ -462,6 +403,7 @@ const handleBestMove = async (req, res) => {
     }
 };
 
+// Два маршрута для обратной совместимости
 app.post('/api/get-best-move', handleBestMove);
 app.post('/get-best-move', handleBestMove);
 
@@ -479,11 +421,10 @@ app.listen(PORT, () => {
     console.log(`✅ Server running on port ${PORT}`);
     console.log(`📊 Statistics enabled`);
     console.log(`📁 Stats: ${statsFilePath}`);
-    console.log(`📁 Absolute path: ${path.resolve(statsFilePath)}`);
     console.log(`🎯 Engine: ${getEnginePath()}`);
     console.log(`\n📊 Available stats endpoints:`);
     console.log(`   GET /api/stats/summary - Сводка по всем датам`);
-    console.log(`   GET /api/stats/detailed/:date - Детальная статистика за дату`);
+    console.log(`   GET /api/stats/detailed/:date - Детальная статистика за дату (с URL)`);
     console.log(`   GET /api/stats/:date - Базовая статистика за дату`);
     console.log(`   GET /api/sessions/active - Активные сессии`);
 });

@@ -127,19 +127,10 @@ app.use((req, res, next) => {
     // Обновляем активность
     session.lastActivity = now.toISOString();
     session.requestCount++;
-    
-    // Добавляем информацию о запросе (с FEN для /get-best-move)
-    const requestInfo = { method, url, timestamp: now.toISOString() };
-    
-    // Если это запрос к движку - добавляем FEN позицию
-    if (url.includes('/get-best-move') && req.body && req.body.fen) {
-        requestInfo.fen = req.body.fen;
-    }
-    
-    session.requests.push(requestInfo);
+    session.requests.push({ method, url, timestamp: now.toISOString() });
     
     console.log(`📊 ${method} ${url} | Session: ${session.id} | Requests: ${session.requestCount}`);
-   
+    
     next();
 });
 
@@ -200,6 +191,7 @@ const flushStats = () => {
                 dailyStats.sessions.push({
                     id: session.id,
                     ip: session.ip,
+                    userAgent: session.userAgent,
                     startTime: session.startTime,
                     endTime: session.lastActivity,
                     requestCount: session.requestCount,
@@ -212,7 +204,6 @@ const flushStats = () => {
                 existingSession.requests = session.requests.slice();
                 console.log(`📝 Updated existing session: ${session.id}`);
             }
-
         });
         
         dailyStats.totalRequests = dailyStats.sessions.reduce((sum, s) => sum + s.requestCount, 0);
@@ -296,13 +287,13 @@ app.get('/api/stats/detailed/:date', (req, res) => {
         const detailedSessions = dayStats.sessions.map(session => ({
             id: session.id,
             ip: session.ip,
+            userAgent: session.userAgent,
             startTime: session.startTime,
             lastActivity: session.endTime,
             requestCount: session.requestCount,
             urls: session.requests.map(r => r.url),
             requests: session.requests
         }));
-
         
         res.json({
             success: true,
@@ -396,8 +387,8 @@ const handleBestMove = async (req, res) => {
 
         const commands = [
             'uci',
-            `setoption name VariantPath value ${path.join(__dirname, 'variants', 'chessdragon.ini')}`,
             'setoption name UCI_Variant value chessdragon',
+            `setoption name VariantPath value ${path.join(__dirname, 'variants', 'chessdragon.ini')}`,
             `position fen ${fen}`,
             `go depth ${depth}`
         ];

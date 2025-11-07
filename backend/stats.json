@@ -1,10 +1,151 @@
 {
-  "2025-11-05": {
-    "POST /get-best-move 200": 6,
-    "GET * 200": 8
+  "daily": {
+    "2025-11-07": {
+      "date": "2025-11-07",
+      "totalRequests": 19,
+      "uniqueIPs": [
+        "::1",
+        "::ffff:172.25.43.80"
+      ],
+      "sessions": [
+        {
+          "id": "::1_1762532425214_l4zjrdv22",
+          "ip": "::1",
+          "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 YaBrowser/25.8.0.0 Safari/537.36",
+          "startTime": "2025-11-07T16:20:25.214Z",
+          "endTime": "2025-11-07T16:21:19.641Z",
+          "requestCount": 3,
+          "requests": [
+            {
+              "method": "POST",
+              "url": "/get-best-move",
+              "timestamp": "2025-11-07T16:20:25.214Z"
+            },
+            {
+              "method": "POST",
+              "url": "/get-best-move",
+              "timestamp": "2025-11-07T16:20:30.856Z"
+            },
+            {
+              "method": "POST",
+              "url": "/get-best-move",
+              "timestamp": "2025-11-07T16:21:19.641Z"
+            }
+          ]
+        },
+        {
+          "id": "::1_1762533637355_lgzpwmwk0",
+          "ip": "::1",
+          "startTime": "2025-11-07T16:40:37.355Z",
+          "endTime": "2025-11-07T16:54:59.569Z",
+          "requestCount": 2,
+          "requests": [
+            {
+              "method": "POST",
+              "url": "/get-best-move",
+              "timestamp": "2025-11-07T16:40:37.355Z",
+              "fen": "r1b1kb1r/ppppqp1p/6p1/1B2n2Q/3PP3/8/PPP2KPP/RNB4R[Ddd] b kq - 0 9"
+            },
+            {
+              "method": "POST",
+              "url": "/get-best-move",
+              "timestamp": "2025-11-07T16:54:59.569Z",
+              "fen": "r1b1kb1r/ppppqp1p/8/1B2P2p/4P3/8/PPP2KPP/RNB4R[Ddd] b kq - 0 10"
+            }
+          ]
+        },
+        {
+          "id": "::ffff:172.25.43.80_1762537851950_7hokgq48f",
+          "ip": "::ffff:172.25.43.80",
+          "startTime": "2025-11-07T17:50:51.950Z",
+          "endTime": "2025-11-07T17:55:40.650Z",
+          "requestCount": 14,
+          "requests": [
+            {
+              "method": "GET",
+              "url": "/",
+              "timestamp": "2025-11-07T17:50:51.950Z"
+            },
+            {
+              "method": "GET",
+              "url": "/favicon.ico",
+              "timestamp": "2025-11-07T17:50:52.291Z"
+            },
+            {
+              "method": "GET",
+              "url": "/",
+              "timestamp": "2025-11-07T17:51:46.609Z"
+            },
+            {
+              "method": "POST",
+              "url": "/get-best-move",
+              "timestamp": "2025-11-07T17:51:51.774Z",
+              "fen": "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR[DDdd] b KQkq - 0 1"
+            },
+            {
+              "method": "POST",
+              "url": "/get-best-move",
+              "timestamp": "2025-11-07T17:52:39.300Z",
+              "fen": "rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R[DDDd] b KQkq - 1 2"
+            },
+            {
+              "method": "POST",
+              "url": "/get-best-move",
+              "timestamp": "2025-11-07T17:52:44.222Z",
+              "fen": "r1bqkbnr/pppp1ppp/2n5/4N3/4P3/8/PPPP1PPP/RNBQKB1R[DDDd] b KQkq - 0 3"
+            },
+            {
+              "method": "POST",
+              "url": "/get-best-move",
+              "timestamp": "2025-11-07T17:52:58.645Z",
+              "fen": "r1bqkbnr/pppp1ppp/8/4n3/3PP3/8/PPP2PPP/RNBQKB1R[DDDd] b KQkq - 0 4"
+            },
+            {
+              "method": "POST",
+              "url": "/get-best-move",
+              "timestamp": "2025-11-07T17:53:01.877Z",
+              "fen": "r1bqkbnr/pppp1ppp/2n5/3P4/4P3/8/PPP2PPP/RNBQKB1R[DDDd] b KQkq - 0 5"
+            },
+            {
+              "method": "POST",
+              "url": "/get-best-move",
+              "timestamp": "2025-11-07T17:53:05.630Z",
+              "fen": "r1bqkbnr/pppp1ppp/8/3Pn3/4PB2/8/PPP2PPP/RN1QKB1R[DDDd] b KQkq - 2 6"
+            },
+            {
+              "method": "POST",
+              "url": "/get-best-move",
+              "timestamp": "2025-11-07T17:53:08.475Z",
+              "fen": "r1b1kbnr/pppp1ppp/5q2/3PB3/4P3/8/PPP2PPP/RN1QKB1R[DDDd] b KQkq - 0 7"
+            },
+            {
+              "method": "POST",
+              "url": "/get-best-move",
+              "timestamp": "2025-11-07T17:54:19.869Z",
+              "fen": "Q1b1kbnr/1pp5/8/3Pq3/4P3/8/PPP2PPP/RN1QKB1R[DDDd] b KQk - 0 8"
+            },
+            {
+              "method": "POST",
+              "url": "/get-best-move",
+              "timestamp": "2025-11-07T17:54:30.756Z",
+              "fen": "Q1b1kbnr/1pp5/8/3P4/4q3/8/PPP1QPPP/RN2KB1R[DDDd] b KQk - 1 9"
+            },
+            {
+              "method": "POST",
+              "url": "/get-best-move",
+              "timestamp": "2025-11-07T17:54:33.695Z",
+              "fen": "Q1b1kbnr/1pp5/8/3P4/8/8/PPP1BPPP/RN2K2R[DDDd] b KQk - 0 10"
+            },
+            {
+              "method": "POST",
+              "url": "/get-best-move",
+              "timestamp": "2025-11-07T17:55:40.650Z",
+              "fen": "D1bk1bnr/2pp4/8/3P4/8/8/PPP1BPPP/RN2K2R[DDDd] b KQ - 0 11"
+            }
+          ]
+        }
+      ]
+    }
   },
-  "2025-11-06": {
-    "GET * 200": 15,
-    "POST /get-best-move 200": 17
-  }
+  "sessions": []
 }
