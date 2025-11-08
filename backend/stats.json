@@ -2,7 +2,7 @@
   "daily": {
     "2025-11-08": {
       "date": "2025-11-08",
-      "totalRequests": 41,
+      "totalRequests": 42,
       "uniqueIPs": [
         "::ffff:172.25.43.80"
       ],
@@ -245,8 +245,8 @@
           "id": "::ffff:172.25.43.80_1762629847781_qcqcyk8uq",
           "ip": "::ffff:172.25.43.80",
           "startTime": "2025-11-08T19:24:07.781Z",
-          "endTime": "2025-11-08T19:24:11.181Z",
-          "requestCount": 2,
+          "endTime": "2025-11-08T19:39:37.511Z",
+          "requestCount": 3,
           "requests": [
             {
               "method": "GET",
@@ -258,6 +258,11 @@
               "url": "/get-best-move",
               "timestamp": "2025-11-08T19:24:11.181Z",
               "fen": "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR[DDdd] b KQkq - 0 1"
+            },
+            {
+              "method": "GET",
+              "url": "/",
+              "timestamp": "2025-11-08T19:39:37.511Z"
             }
           ]
         }

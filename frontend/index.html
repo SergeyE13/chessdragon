@@ -1063,7 +1063,7 @@ pieceValue = d:310
 				const elapsed = Date.now() - startTime;
 				
 				if (searchInfo) {
-					searchInfo.innerHTML = `✓ Узлов: ${minimaxNodesCount.toLocaleString('ru-RU')} | Время: ${(elapsed / 1000).toFixed(2)}с`;
+					searchInfo.innerHTML = `✓ ${minimaxNodesCount.toLocaleString('ru-RU')} вариантов | ${(elapsed / 1000).toFixed(2)}с`;
 				}
 				
 				console.log(`Minimax completed in ${elapsed}ms, nodes: ${minimaxNodesCount}, move: ${result.move}`);
@@ -1129,7 +1129,7 @@ pieceValue = d:310
 				
 				// Показать финальную информацию
 				if (searchInfo) {
-					searchInfo.innerHTML = `✓ Ходов: ${minimaxNodesCount.toLocaleString('ru-RU')} | Время: ${(elapsed / 1000).toFixed(2)}с`;
+					searchInfo.innerHTML = `✓ ${minimaxNodesCount.toLocaleString('ru-RU')} вариантов | ${(elapsed / 1000).toFixed(2)}с`;
 				}
 				
 				console.log(`Minimax completed in ${elapsed}ms, nodes: ${minimaxNodesCount}, move: ${result.move}`);
@@ -1317,7 +1317,7 @@ pieceValue = d:310
                 // ✅ Для уровня 0 не перезаписываем (информация уже выведена в getBestMoveWithMinimaxAsync)
                 if (currentDifficulty !== 0) {
                     if (result.info) {
-                        searchInfo.innerHTML = `Глубина: ${result.info.depth || depth} | Узлов: ${(result.info.nodes || 0).toLocaleString('ru-RU')} | Оценка: ${((result.info.score || 0) / 100).toFixed(2)}`;
+                        searchInfo.innerHTML = `Глубина: ${result.info.depth || depth} | Просчитано ходов: ${(result.info.nodes || 0).toLocaleString('ru-RU')} | Оценка: ${((result.info.score || 0) / 100).toFixed(2)}`;
                     } else {
                         searchInfo.innerHTML = `Глубина: ${depth} | Время: ${(elapsed / 1000).toFixed(1)}с`;
                     }
