@@ -1026,66 +1026,42 @@ pieceValue = d:310
 		}
 
 		async function getBestMoveWithMinimaxAsync(depth) {
-			try {
-				console.log(`Minimax search (depth ${depth})...`);
-				
-				const currentTurn = safeBoardCall(() => board.turn(), true);
-				const isMaximizing = currentTurn;
-				
-				minimaxNodesCount = 0;
-				const searchInfo = document.getElementById('search-info');
-				
-				// Показываем окно и даем браузеру перерисоваться
-				await new Promise(resolve => {
-					requestAnimationFrame(() => {
-						if (searchInfo) {
-							searchInfo.innerHTML = '⏳ Начинаю поиск...';
-						}
-						requestAnimationFrame(resolve);
-					});
-				});
-				
-				// Даем браузеру еще время
-				await sleepFrame();
-				
-				let lastUpdateTime = Date.now();
-				
-				minimaxUpdateCallback = (count) => {
-					const now = Date.now();
-					if (now - lastUpdateTime > 50 && searchInfo) {
-						searchInfo.innerHTML = `⏳ Просчитано: ${count.toLocaleString('ru-RU')} ходов...`;
-						lastUpdateTime = now;
-					}
-				};
-				
-				const startTime = Date.now();
-				const result = minimaxFixed(depth, isMaximizing);
-				const elapsed = Date.now() - startTime;
-				
-				if (searchInfo) {
-					searchInfo.innerHTML = `✓ Узлов: ${minimaxNodesCount.toLocaleString('ru-RU')} | Время: ${(elapsed / 1000).toFixed(2)}с`;
-				}
-				
-				console.log(`Minimax completed in ${elapsed}ms, nodes: ${minimaxNodesCount}, move: ${result.move}`);
-				
-				minimaxUpdateCallback = null;
-				
-				if (!result.move) {
-					const moves = safeBoardCall(() => 
-						board.legalMoves().split(' ').filter(m => m)
-					);
-					return moves[0] || null;
-				}
-				
-				return result.move;
-			} catch (error) {
-				console.error('getBestMoveWithMinimax error:', error);
-				const moves = safeBoardCall(() => 
-					board.legalMoves().split(' ').filter(m => m)
-				);
-				return moves[0] || null;
-			}
-		}
+    try {
+        const currentTurn = safeBoardCall(() => board.turn(), true);
+        const isMaximizing = currentTurn;
+
+        minimaxNodesCount = 0;
+        const searchInfo = document.getElementById('search-info');
+
+        // Показываем начало анализа
+        if (searchInfo) {
+            searchInfo.innerHTML = '⏳ Анализирую позицию...';
+        }
+
+        const startTime = Date.now();
+        const result = minimaxFixed(depth, isMaximizing);
+        const elapsed = Date.now() - startTime;
+
+        // Показываем результат
+        if (searchInfo) {
+            searchInfo.innerHTML = `✓ ${minimaxNodesCount.toLocaleString('ru-RU')} узлов за ${(elapsed / 1000).toFixed(2)}с`;
+        }
+
+        console.log(`Search: ${minimaxNodesCount} nodes in ${elapsed}ms, move: ${result.move}`);
+
+        if (!result.move) {
+            const moves = safeBoardCall(() => board.legalMoves().split(' ').filter(m => m));
+            return moves[0] || null;
+        }
+        return result.move;
+    } catch (error) {
+        console.error('Search error:', error);
+        const moves = safeBoardCall(() => board.legalMoves().split(' ').filter(m => m));
+        return moves[0] || null;
+    }
+}
+
+
 		
 
 		async function getBestMoveWithMinimax2(depth) {
@@ -1314,11 +1290,14 @@ pieceValue = d:310
                 const result = await getBestMoveFromEngine(fen, depth);
                 const elapsed = Date.now() - startTime;
                 
-                if (result.info) {
-                    searchInfo.innerHTML = `Глубина: ${result.info.depth || depth} | Узлов: ${(result.info.nodes || 0).toLocaleString('ru-RU')} | Оценка: ${((result.info.score || 0) / 100).toFixed(2)}`;
-                } else {
-                    searchInfo.innerHTML = `Глубина: ${depth} | Время: ${(elapsed / 1000).toFixed(1)}с`;
-                }
+				// ✅ Для уровня 0 не перезаписываем информацию (она уже выведена в getBestMoveWithMinimaxAsync)
+				if (currentDifficulty !== 0) {
+					if (result.info) {
+						searchInfo.innerHTML = `Глубина: ${result.info.depth || depth} | Узлов: ${(result.info.nodes || 0).toLocaleString('ru-RU')} | Оценка: ${((result.info.score || 0) / 100).toFixed(2)}`;
+					} else {
+						searchInfo.innerHTML = `Глубина: ${depth} | Время: ${(elapsed / 1000).toFixed(1)}с`;
+					}
+				}
                 
                 const turnBeforeMove = safeBoardCall(() => board.turn(), true);
                 const move = result.move;
@@ -1381,7 +1360,7 @@ pieceValue = d:310
                 
                 setTimeout(() => {
                     thinkingDiv.classList.remove('active', 'show-now');
-                }, 2000);  // ← Увеличено с 800ms до 2000ms (2 секунды)
+                }, 800);
                 
                 updateStatus();
                 
