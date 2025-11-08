@@ -1,1 +1,1 @@
-curl -X GET https://chessdragon.onrender.com/api/hello
+curl -X GET https://chessdragon.onrender.com/api/stats
