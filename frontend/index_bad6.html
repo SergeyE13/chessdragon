@@ -766,9 +766,9 @@
 
     <script type="module">
 		//const API_URL = `http://${window.location.hostname}:3000`;
-		//const API_URL = `http://gofra.ddns.net:3000`;
+		const API_URL = `http://gofra.ddns.net:3000`;
 		//const API_URL = 'http://localhost:3000';
-		const API_URL = 'https://chessdragon.onrender.com';
+		//const API_URL = 'https://chessdragon.onrender.com';
 
         let board = null;
         let ffish = null;
@@ -1314,13 +1314,10 @@ pieceValue = d:310
                 const result = await getBestMoveFromEngine(fen, depth);
                 const elapsed = Date.now() - startTime;
                 
-                // ✅ Для уровня 0 не перезаписываем (информация уже выведена в getBestMoveWithMinimaxAsync)
-                if (currentDifficulty !== 0) {
-                    if (result.info) {
-                        searchInfo.innerHTML = `Глубина: ${result.info.depth || depth} | Узлов: ${(result.info.nodes || 0).toLocaleString('ru-RU')} | Оценка: ${((result.info.score || 0) / 100).toFixed(2)}`;
-                    } else {
-                        searchInfo.innerHTML = `Глубина: ${depth} | Время: ${(elapsed / 1000).toFixed(1)}с`;
-                    }
+                if (result.info) {
+                    searchInfo.innerHTML = `Глубина: ${result.info.depth || depth} | Узлов: ${(result.info.nodes || 0).toLocaleString('ru-RU')} | Оценка: ${((result.info.score || 0) / 100).toFixed(2)}`;
+                } else {
+                    searchInfo.innerHTML = `Глубина: ${depth} | Время: ${(elapsed / 1000).toFixed(1)}с`;
                 }
                 
                 const turnBeforeMove = safeBoardCall(() => board.turn(), true);
@@ -1384,7 +1381,7 @@ pieceValue = d:310
                 
                 setTimeout(() => {
                     thinkingDiv.classList.remove('active', 'show-now');
-                }, 2000);
+                }, 2000);  // ← Увеличено с 800ms до 2000ms (2 секунды)
                 
                 updateStatus();
                 

@@ -2,7 +2,7 @@
   "daily": {
     "2025-11-08": {
       "date": "2025-11-08",
-      "totalRequests": 34,
+      "totalRequests": 41,
       "uniqueIPs": [
         "::ffff:172.25.43.80"
       ],
@@ -200,6 +200,64 @@
               "url": "/get-best-move",
               "timestamp": "2025-11-08T19:10:28.672Z",
               "fen": "rnbqkbnr/ppp1pppp/8/1P1d3Q/8/8/PP1P1PPP/RNB1K1NR[DD] b KQkq - 1 6"
+            }
+          ]
+        },
+        {
+          "id": "::ffff:172.25.43.80_1762629427601_hql1fru30",
+          "ip": "::ffff:172.25.43.80",
+          "startTime": "2025-11-08T19:17:07.601Z",
+          "endTime": "2025-11-08T19:18:14.536Z",
+          "requestCount": 5,
+          "requests": [
+            {
+              "method": "GET",
+              "url": "/",
+              "timestamp": "2025-11-08T19:17:07.601Z"
+            },
+            {
+              "method": "POST",
+              "url": "/get-best-move",
+              "timestamp": "2025-11-08T19:17:52.803Z",
+              "fen": "rnbqkbnr/pppdpppp/8/3P4/3P4/8/PPP2PPP/RNBQKBNR[DDd] b KQkq - 0 3"
+            },
+            {
+              "method": "POST",
+              "url": "/get-best-move",
+              "timestamp": "2025-11-08T19:17:58.844Z",
+              "fen": "rnbqkbnr/ppp1pppp/8/3d4/3P4/5N2/PPP2PPP/RNBQKB1R[DDd] b KQkq - 1 4"
+            },
+            {
+              "method": "POST",
+              "url": "/get-best-move",
+              "timestamp": "2025-11-08T19:18:08.470Z",
+              "fen": "rnbqkbnr/ppp1pppp/8/8/3P4/5Q2/PPP2PPP/RNB1KB1R[DDd] b KQkq - 0 5"
+            },
+            {
+              "method": "POST",
+              "url": "/get-best-move",
+              "timestamp": "2025-11-08T19:18:14.536Z",
+              "fen": "rnb1kbnr/ppp1pppp/8/8/3q4/4BQ2/PPP2PPP/RN2KB1R[DDd] b KQkq - 1 6"
+            }
+          ]
+        },
+        {
+          "id": "::ffff:172.25.43.80_1762629847781_qcqcyk8uq",
+          "ip": "::ffff:172.25.43.80",
+          "startTime": "2025-11-08T19:24:07.781Z",
+          "endTime": "2025-11-08T19:24:11.181Z",
+          "requestCount": 2,
+          "requests": [
+            {
+              "method": "GET",
+              "url": "/",
+              "timestamp": "2025-11-08T19:24:07.781Z"
+            },
+            {
+              "method": "POST",
+              "url": "/get-best-move",
+              "timestamp": "2025-11-08T19:24:11.181Z",
+              "fen": "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR[DDdd] b KQkq - 0 1"
             }
           ]
         }
