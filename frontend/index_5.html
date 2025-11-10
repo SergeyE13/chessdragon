@@ -233,8 +233,7 @@
 
         .status-display {
             text-align: center;
-            margin: 0;
-            flex: 1;
+            margin-bottom: 5px;
         }
 
         #status {
@@ -577,14 +576,8 @@
             }
 
 			.game-board {
-            background: white;
-            border-radius: 15px;
-            padding: 35px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
+				padding: 8px;
+			}
             
             #board {
                 grid-template-columns: repeat(8, 45px);
@@ -659,17 +652,7 @@
 			}			
         }
 			
-    
-        /* ✅ На одной линии: Резерв белых | Статус | Резерв чёрных */
-        .header-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 30px;
-            width: 100%;
-            margin-bottom: 15px;
-        }
-        </style>
+    </style>
 </head>
 <body>
     <div class="container">
@@ -735,18 +718,17 @@
         </div>
 
         <div class="game-board">
-            <div class="header-row">
+            <div class="status-display">
+                <div id="status">Загрузка...</div>
+            </div>
+
+            <div class="pockets">
                 <div class="pocket">
-                    <div class="pocket-label">Резерв белых</div>
+                    <div class="pocket-label">Белые драконы</div>
                     <div class="pocket-pieces" id="white-pocket" data-color="white" onclick="selectDragon('white')">—</div>
                 </div>
-
-                <div class="status-display">
-                    <div id="status">Загрузка...</div>
-                </div>
-
                 <div class="pocket">
-                    <div class="pocket-label">Резерв чёрных</div>
+                    <div class="pocket-label">Чёрные драконы</div>
                     <div class="pocket-pieces" id="black-pocket" data-color="black" onclick="selectDragon('black')">—</div>
                 </div>
             </div>
@@ -869,7 +851,7 @@ pocketSize = 2
 whiteDropRegion = *1, *2
 blackDropRegion = *7, *8
 promotionPieceTypes = nbrqd
-pieceValue = d:350
+pieceValue = d:310
 `;
                     ffish.loadVariantConfig(variantConfig);
                 }
@@ -925,8 +907,8 @@ pieceValue = d:350
 			let score = 0;
 			
 			const pieceValues = {
-				'P': 100, 'N': 320, 'B': 330, 'R': 500, 'Q': 900, 'K': 20000, 'D': 350,
-				'p': -100, 'n': -320, 'b': -330, 'r': -500, 'q': -900, 'k': -20000, 'd': -350
+				'P': 100, 'N': 320, 'B': 330, 'R': 500, 'Q': 900, 'K': 20000, 'D': 310,
+				'p': -100, 'n': -320, 'b': -330, 'r': -500, 'q': -900, 'k': -20000, 'd': -310
 			};
 			
 			// Материальная оценка
@@ -1081,7 +1063,7 @@ pieceValue = d:350
 				const elapsed = Date.now() - startTime;
 				
 				if (searchInfo) {
-					searchInfo.innerHTML = `✓ Просчитано ходов: ${minimaxNodesCount.toLocaleString('ru-RU')} | Время: ${(elapsed / 1000).toFixed(2)}с`;
+					searchInfo.innerHTML = `✓ ${minimaxNodesCount.toLocaleString('ru-RU')} вариантов | ${(elapsed / 1000).toFixed(2)}с`;
 				}
 				
 				console.log(`Minimax completed in ${elapsed}ms, nodes: ${minimaxNodesCount}, move: ${result.move}`);
@@ -1147,7 +1129,7 @@ pieceValue = d:350
 				
 				// Показать финальную информацию
 				if (searchInfo) {
-					searchInfo.innerHTML = `✓ Ходов: ${minimaxNodesCount.toLocaleString('ru-RU')} | Время: ${(elapsed / 1000).toFixed(2)}с`;
+					searchInfo.innerHTML = `✓ ${minimaxNodesCount.toLocaleString('ru-RU')} вариантов | ${(elapsed / 1000).toFixed(2)}с`;
 				}
 				
 				console.log(`Minimax completed in ${elapsed}ms, nodes: ${minimaxNodesCount}, move: ${result.move}`);
@@ -1243,11 +1225,8 @@ pieceValue = d:350
                 fen: fenBefore,
                 whiteDragons: whiteDragons,
                 blackDragons: blackDragons,
-                lastMoveSquares: { ...lastMoveSquares },
-                capturedByWhite: [...capturedByWhite],  // ← Добавить
-                capturedByBlack: [...capturedByBlack]   // ← Добавить
+                lastMoveSquares: { ...lastMoveSquares }
             });
-            			
             
             const success = safeBoardCall(() => {
                 board.push(move);
@@ -1355,14 +1334,13 @@ pieceValue = d:350
 				if (to) {
 					capturedPiece = getPieceAtSquare(fenBefore, to);
 				}
-		  				
-				moveHistory.push({
-					fen: fenBefore,
-					whiteDragons, blackDragons,
-					lastMoveSquares,
-					capturedByWhite: [...capturedByWhite],
-					capturedByBlack: [...capturedByBlack]
-				});				
+		  
+                moveHistory.push({
+                    fen: fenBefore,
+                    whiteDragons: whiteDragons,
+                    blackDragons: blackDragons,
+                    lastMoveSquares: { ...lastMoveSquares }
+                });
                 
                 const success = safeBoardCall(() => {
                     board.push(move);
@@ -1665,7 +1643,7 @@ function highlightDragonDrops() {
             
             const boardStr = fen.split(' ')[0].split('[')[0];
             let score = 0;
-            const values = {'P':100,'N':320,'B':330,'R':500,'Q':900,'D':310,'p':-100,'n':-320,'b':-330,'r':-500,'q':-900,'d':-350};
+            const values = {'P':100,'N':320,'B':330,'R':500,'Q':900,'D':310,'p':-100,'n':-320,'b':-330,'r':-500,'q':-900,'d':-310};
             
             for (let char of boardStr) {
                 if (values[char]) score += values[char];
@@ -1832,7 +1810,7 @@ function highlightDragonDrops() {
             const historyDiv = document.getElementById('move-history');
             if (!historyDiv) return;
             
-            historyDiv.innerHTML = moveHistoryData.slice().reverse().map(m => 
+            historyDiv.innerHTML = moveHistoryData.map(m => 
                 `<div class="move-pair">
                     <span class="move-number">${m.number}.</span>
                     <span class="move">${m.white}</span>
@@ -2038,10 +2016,6 @@ function highlightDragonDrops() {
                 whiteDragons = lastState.whiteDragons;
                 blackDragons = lastState.blackDragons;
                 lastMoveSquares = lastState.lastMoveSquares;
-               // ✅ Восстанавливаем взятые фигуры
-                capturedByWhite = lastState.capturedByWhite ? [...lastState.capturedByWhite] : [];
-                capturedByBlack = lastState.capturedByBlack ? [...lastState.capturedByBlack] : [];
- 				
                 
                 if (moveHistoryData.length > 0) {
                     const lastMove = moveHistoryData[moveHistoryData.length - 1];
@@ -2054,7 +2028,6 @@ function highlightDragonDrops() {
                 
                 updateBoard();
                 updatePockets();
-				updateCapturedPieces();  // ← Добавить				
                 updateEvaluation();
 				updatePositionDisplay();
                 updateStatus();
