@@ -851,7 +851,7 @@
                 
                 if (board) {
                     try {
-                        board.pop();
+                        board.delete();
                     } catch (e) {
                         console.warn('Could not delete old board:', e);
                     }
@@ -1016,11 +1016,12 @@ promotionPieceTypes = nbrqd
 				
 				// Восстанавливаем board
 				try {
-					board.pop();
+					board.delete();
 				} catch (e) {}
 				
 				try {
-					  // Главное: заменяем глобальный board
+					const newBoard = new ffish.Board('Chess_dragon', fenBefore);
+					board = newBoard;  // Главное: заменяем глобальный board
 				} catch (e) {
 					console.error('Restore error:', e);
 				}
@@ -2052,7 +2053,7 @@ promotionPieceTypes = nbrqd
 			}
 			
 			try {
-				board.pop();
+				board.delete();
 				const newBoard = new ffish.Board('Chess_dragon', newFen);
 				board = newBoard;
 				
@@ -2128,7 +2129,7 @@ promotionPieceTypes = nbrqd
 			// (Для этого нужно сохранять их в moveHistory, но это усложнит код)
 
             try {
-                board.pop();
+                board.delete();
                 board = new ffish.Board('Chess_dragon', lastState.fen);
                 whiteDragons = lastState.whiteDragons;
                 blackDragons = lastState.blackDragons;
