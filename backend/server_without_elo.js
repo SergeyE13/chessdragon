@@ -226,8 +226,8 @@ const flushStats = () => {
     }
 };
 
-// Сохраняем статистику каждые 300 секунд
-setInterval(flushStats, 300 * 1000);
+// Сохраняем статистику каждые 30 секунд (для тестирования)
+setInterval(flushStats, 30 * 1000);
 
 // Первое сохранение через 5 секунд после запуска
 setTimeout(flushStats, 5000);
@@ -376,7 +376,7 @@ app.get('/api/sessions/active', (req, res) => {
 // API ДЛЯ FAIRY-STOCKFISH
 // ============================================
 
-const handleBestMove = async (req, res) => {
+const handleBestMove = async (req, res, elo) => {
     console.log('📩 Received FEN:', req.body.fen);
     
     const { fen, depth = 10, elo = 1350} = req.body;
@@ -398,8 +398,6 @@ const handleBestMove = async (req, res) => {
             'uci',
             `setoption name VariantPath value ${path.join(__dirname, 'variants', 'chessdragon.ini')}`,
             'setoption name UCI_Variant value chessdragon',
-			'setoption name UCI_LimitStrength value true',
-			`setoption name UCI_Elo value ${elo}`,
             `position fen ${fen}`,
             `go depth ${depth}`
         ];
