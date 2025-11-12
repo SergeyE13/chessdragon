@@ -270,9 +270,19 @@
     },
     "2025-11-11": {
       "date": "2025-11-11",
-      "totalRequests": 87,
+      "totalRequests": 128,
       "uniqueIPs": [
-        "::1"
+        "::1",
+        "::ffff:192.168.2.1",
+        "::ffff:35.173.244.47",
+        "::ffff:216.180.246.18",
+        "::ffff:172.25.43.80",
+        "::ffff:157.245.216.142",
+        "::ffff:216.180.246.85",
+        "::ffff:161.35.230.229",
+        "::ffff:147.185.132.70",
+        "::ffff:198.235.24.99",
+        "::ffff:147.185.132.93"
       ],
       "sessions": [
         {
@@ -830,6 +840,438 @@
               "url": "/get-best-move",
               "timestamp": "2025-11-11T09:29:15.608Z",
               "fen": "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR[DDdd] b KQkq - 0 1"
+            }
+          ]
+        },
+        {
+          "id": "::ffff:192.168.2.1_1762860568428_uj5jzi7ig",
+          "ip": "::ffff:192.168.2.1",
+          "startTime": "2025-11-11T11:29:28.428Z",
+          "endTime": "2025-11-11T11:29:33.644Z",
+          "requestCount": 3,
+          "requests": [
+            {
+              "method": "GET",
+              "url": "/",
+              "timestamp": "2025-11-11T11:29:28.428Z"
+            },
+            {
+              "method": "GET",
+              "url": "/favicon.ico",
+              "timestamp": "2025-11-11T11:29:29.014Z"
+            },
+            {
+              "method": "GET",
+              "url": "/",
+              "timestamp": "2025-11-11T11:29:33.644Z"
+            }
+          ]
+        },
+        {
+          "id": "::ffff:35.173.244.47_1762863656615_tkk0it5gv",
+          "ip": "::ffff:35.173.244.47",
+          "startTime": "2025-11-11T12:20:56.615Z",
+          "endTime": "2025-11-11T12:20:56.615Z",
+          "requestCount": 1,
+          "requests": [
+            {
+              "method": "GET",
+              "url": "/",
+              "timestamp": "2025-11-11T12:20:56.615Z"
+            }
+          ]
+        },
+        {
+          "id": "::ffff:216.180.246.18_1762865073321_oqta97qbk",
+          "ip": "::ffff:216.180.246.18",
+          "startTime": "2025-11-11T12:44:33.321Z",
+          "endTime": "2025-11-11T12:47:30.289Z",
+          "requestCount": 2,
+          "requests": [
+            {
+              "method": "GET",
+              "url": "/",
+              "timestamp": "2025-11-11T12:44:33.321Z"
+            },
+            {
+              "method": "GET",
+              "url": "/favicon.ico",
+              "timestamp": "2025-11-11T12:47:30.289Z"
+            }
+          ]
+        },
+        {
+          "id": "::ffff:172.25.43.80_1762871190109_obtirv8o3",
+          "ip": "::ffff:172.25.43.80",
+          "startTime": "2025-11-11T14:26:30.109Z",
+          "endTime": "2025-11-11T14:27:29.913Z",
+          "requestCount": 3,
+          "requests": [
+            {
+              "method": "GET",
+              "url": "/favicon.ico",
+              "timestamp": "2025-11-11T14:26:30.109Z"
+            },
+            {
+              "method": "GET",
+              "url": "/",
+              "timestamp": "2025-11-11T14:26:33.177Z"
+            },
+            {
+              "method": "GET",
+              "url": "/",
+              "timestamp": "2025-11-11T14:27:29.913Z"
+            }
+          ]
+        },
+        {
+          "id": "::1_1762873445297_87pvwl4df",
+          "ip": "::1",
+          "startTime": "2025-11-11T15:04:05.297Z",
+          "endTime": "2025-11-11T15:04:13.401Z",
+          "requestCount": 3,
+          "requests": [
+            {
+              "method": "POST",
+              "url": "/get-best-move",
+              "timestamp": "2025-11-11T15:04:05.297Z",
+              "fen": "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR[DDdd] b KQkq - 0 1"
+            },
+            {
+              "method": "POST",
+              "url": "/get-best-move",
+              "timestamp": "2025-11-11T15:04:09.345Z",
+              "fen": "rnbqkbnr/pppp1ppp/4p3/8/4P3/5N2/PPPP1PPP/RNBQKB1R[DDdd] b KQkq - 1 2"
+            },
+            {
+              "method": "POST",
+              "url": "/get-best-move",
+              "timestamp": "2025-11-11T15:04:13.401Z",
+              "fen": "rnbqkbnr/ppp2ppp/4p3/3p4/2B1P3/5N2/PPPP1PPP/RNBQK2R[DDdd] b KQkq - 1 3"
+            }
+          ]
+        },
+        {
+          "id": "::ffff:192.168.2.1_1762873480562_fmk4pavyq",
+          "ip": "::ffff:192.168.2.1",
+          "startTime": "2025-11-11T15:04:40.562Z",
+          "endTime": "2025-11-11T15:04:53.622Z",
+          "requestCount": 3,
+          "requests": [
+            {
+              "method": "POST",
+              "url": "/get-best-move",
+              "timestamp": "2025-11-11T15:04:40.562Z",
+              "fen": "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR[DDdd] b KQkq - 0 1"
+            },
+            {
+              "method": "POST",
+              "url": "/get-best-move",
+              "timestamp": "2025-11-11T15:04:49.695Z",
+              "fen": "rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R[DDdd] b KQkq - 1 2"
+            },
+            {
+              "method": "POST",
+              "url": "/get-best-move",
+              "timestamp": "2025-11-11T15:04:53.622Z",
+              "fen": "r1bqkbnr/pppp1ppp/2n5/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R[DDdd] b KQkq - 3 3"
+            }
+          ]
+        },
+        {
+          "id": "::ffff:172.25.43.80_1762873818866_8e1dl1jey",
+          "ip": "::ffff:172.25.43.80",
+          "startTime": "2025-11-11T15:10:18.866Z",
+          "endTime": "2025-11-11T17:58:19.882Z",
+          "requestCount": 14,
+          "requests": [
+            {
+              "method": "GET",
+              "url": "/",
+              "timestamp": "2025-11-11T15:10:18.866Z"
+            },
+            {
+              "method": "GET",
+              "url": "/favicon.ico",
+              "timestamp": "2025-11-11T15:10:19.118Z"
+            },
+            {
+              "method": "GET",
+              "url": "/",
+              "timestamp": "2025-11-11T15:15:42.755Z"
+            },
+            {
+              "method": "GET",
+              "url": "/",
+              "timestamp": "2025-11-11T15:43:55.719Z"
+            },
+            {
+              "method": "GET",
+              "url": "/",
+              "timestamp": "2025-11-11T15:51:29.469Z"
+            },
+            {
+              "method": "GET",
+              "url": "/",
+              "timestamp": "2025-11-11T16:05:57.684Z"
+            },
+            {
+              "method": "GET",
+              "url": "/",
+              "timestamp": "2025-11-11T16:06:16.896Z"
+            },
+            {
+              "method": "GET",
+              "url": "/",
+              "timestamp": "2025-11-11T16:36:52.886Z"
+            },
+            {
+              "method": "GET",
+              "url": "/",
+              "timestamp": "2025-11-11T16:44:07.659Z"
+            },
+            {
+              "method": "GET",
+              "url": "/",
+              "timestamp": "2025-11-11T17:05:32.727Z"
+            },
+            {
+              "method": "GET",
+              "url": "/",
+              "timestamp": "2025-11-11T17:09:12.983Z"
+            },
+            {
+              "method": "GET",
+              "url": "/",
+              "timestamp": "2025-11-11T17:34:20.829Z"
+            },
+            {
+              "method": "GET",
+              "url": "/",
+              "timestamp": "2025-11-11T17:56:11.242Z"
+            },
+            {
+              "method": "GET",
+              "url": "/",
+              "timestamp": "2025-11-11T17:58:19.882Z"
+            }
+          ]
+        },
+        {
+          "id": "::ffff:157.245.216.142_1762879076394_rc71jlrnq",
+          "ip": "::ffff:157.245.216.142",
+          "startTime": "2025-11-11T16:37:56.394Z",
+          "endTime": "2025-11-11T16:37:57.078Z",
+          "requestCount": 2,
+          "requests": [
+            {
+              "method": "GET",
+              "url": "/",
+              "timestamp": "2025-11-11T16:37:56.394Z"
+            },
+            {
+              "method": "GET",
+              "url": "/favicon.ico",
+              "timestamp": "2025-11-11T16:37:57.078Z"
+            }
+          ]
+        },
+        {
+          "id": "::ffff:216.180.246.85_1762882641135_wiwek83ze",
+          "ip": "::ffff:216.180.246.85",
+          "startTime": "2025-11-11T17:37:21.135Z",
+          "endTime": "2025-11-11T17:41:48.045Z",
+          "requestCount": 2,
+          "requests": [
+            {
+              "method": "GET",
+              "url": "/",
+              "timestamp": "2025-11-11T17:37:21.135Z"
+            },
+            {
+              "method": "GET",
+              "url": "/favicon.ico",
+              "timestamp": "2025-11-11T17:41:48.045Z"
+            }
+          ]
+        },
+        {
+          "id": "::ffff:172.25.43.80_1762885744684_0ok24eqqm",
+          "ip": "::ffff:172.25.43.80",
+          "startTime": "2025-11-11T18:29:04.684Z",
+          "endTime": "2025-11-11T18:32:26.571Z",
+          "requestCount": 2,
+          "requests": [
+            {
+              "method": "GET",
+              "url": "/",
+              "timestamp": "2025-11-11T18:29:04.684Z"
+            },
+            {
+              "method": "GET",
+              "url": "/",
+              "timestamp": "2025-11-11T18:32:26.571Z"
+            }
+          ]
+        },
+        {
+          "id": "::ffff:161.35.230.229_1762886206716_bgvqgjwur",
+          "ip": "::ffff:161.35.230.229",
+          "startTime": "2025-11-11T18:36:46.715Z",
+          "endTime": "2025-11-11T18:36:47.548Z",
+          "requestCount": 2,
+          "requests": [
+            {
+              "method": "GET",
+              "url": "/",
+              "timestamp": "2025-11-11T18:36:46.715Z"
+            },
+            {
+              "method": "GET",
+              "url": "/favicon.ico",
+              "timestamp": "2025-11-11T18:36:47.548Z"
+            }
+          ]
+        },
+        {
+          "id": "::ffff:172.25.43.80_1762888283175_uggsui1sp",
+          "ip": "::ffff:172.25.43.80",
+          "startTime": "2025-11-11T19:11:23.175Z",
+          "endTime": "2025-11-11T19:11:23.175Z",
+          "requestCount": 1,
+          "requests": [
+            {
+              "method": "GET",
+              "url": "/",
+              "timestamp": "2025-11-11T19:11:23.175Z"
+            }
+          ]
+        },
+        {
+          "id": "::ffff:147.185.132.70_1762888894851_6gaww5ck9",
+          "ip": "::ffff:147.185.132.70",
+          "startTime": "2025-11-11T19:21:34.851Z",
+          "endTime": "2025-11-11T19:21:34.851Z",
+          "requestCount": 1,
+          "requests": [
+            {
+              "method": "GET",
+              "url": "/",
+              "timestamp": "2025-11-11T19:21:34.851Z"
+            }
+          ]
+        },
+        {
+          "id": "::ffff:198.235.24.99_1762890421974_4miort90l",
+          "ip": "::ffff:198.235.24.99",
+          "startTime": "2025-11-11T19:47:01.974Z",
+          "endTime": "2025-11-11T19:47:01.974Z",
+          "requestCount": 1,
+          "requests": [
+            {
+              "method": "GET",
+              "url": "/",
+              "timestamp": "2025-11-11T19:47:01.974Z"
+            }
+          ]
+        },
+        {
+          "id": "::ffff:147.185.132.93_1762900353271_5aicaz56h",
+          "ip": "::ffff:147.185.132.93",
+          "startTime": "2025-11-11T22:32:33.271Z",
+          "endTime": "2025-11-11T22:32:33.271Z",
+          "requestCount": 1,
+          "requests": [
+            {
+              "method": "GET",
+              "url": "/",
+              "timestamp": "2025-11-11T22:32:33.271Z"
+            }
+          ]
+        }
+      ]
+    },
+    "2025-11-12": {
+      "date": "2025-11-12",
+      "totalRequests": 8,
+      "uniqueIPs": [
+        "::ffff:172.104.241.92",
+        "::ffff:111.7.96.163"
+      ],
+      "sessions": [
+        {
+          "id": "::ffff:172.104.241.92_1762912284170_ie6pfxcm2",
+          "ip": "::ffff:172.104.241.92",
+          "startTime": "2025-11-12T01:51:24.170Z",
+          "endTime": "2025-11-12T01:51:46.058Z",
+          "requestCount": 3,
+          "requests": [
+            {
+              "method": "GET",
+              "url": "/",
+              "timestamp": "2025-11-12T01:51:24.170Z"
+            },
+            {
+              "method": "GET",
+              "url": "/",
+              "timestamp": "2025-11-12T01:51:45.887Z"
+            },
+            {
+              "method": "GET",
+              "url": "/",
+              "timestamp": "2025-11-12T01:51:46.058Z"
+            }
+          ]
+        },
+        {
+          "id": "::ffff:172.104.241.92_1762912285613_395c6d0v2",
+          "ip": "::ffff:172.104.241.92",
+          "startTime": "2025-11-12T01:51:25.613Z",
+          "endTime": "2025-11-12T01:51:26.020Z",
+          "requestCount": 2,
+          "requests": [
+            {
+              "method": "GET",
+              "url": "/",
+              "timestamp": "2025-11-12T01:51:25.613Z"
+            },
+            {
+              "method": "GET",
+              "url": "/favicon.ico",
+              "timestamp": "2025-11-12T01:51:26.020Z"
+            }
+          ]
+        },
+        {
+          "id": "::ffff:111.7.96.163_1762916338370_kcjusn2hq",
+          "ip": "::ffff:111.7.96.163",
+          "startTime": "2025-11-12T02:58:58.370Z",
+          "endTime": "2025-11-12T02:59:04.786Z",
+          "requestCount": 2,
+          "requests": [
+            {
+              "method": "GET",
+              "url": "/",
+              "timestamp": "2025-11-12T02:58:58.370Z"
+            },
+            {
+              "method": "GET",
+              "url": "/favicon.ico",
+              "timestamp": "2025-11-12T02:59:04.786Z"
+            }
+          ]
+        },
+        {
+          "id": "::ffff:111.7.96.163_1762916339399_3fc9ey883",
+          "ip": "::ffff:111.7.96.163",
+          "startTime": "2025-11-12T02:58:59.399Z",
+          "endTime": "2025-11-12T02:58:59.399Z",
+          "requestCount": 1,
+          "requests": [
+            {
+              "method": "GET",
+              "url": "/",
+              "timestamp": "2025-11-12T02:58:59.399Z"
             }
           ]
         }

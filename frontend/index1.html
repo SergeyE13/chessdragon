@@ -678,7 +678,6 @@
                 <button onclick="newGame()">Новая игра</button>
                 <button onclick="flipBoard()">Сменить цвет</button>
                 <button onclick="undoMove()">Отменить ход</button>
-                <button id="autobtn" onclick="toggleAutoPlay()" style="margin-left:5px;background:#4CAF50;color:white;padding:8px 12px;border:none;border-radius:4px;cursor:pointer;font-weight:bold;">🐉 Автоигра</button>
 				<button onclick="togglePositionDisplay()" id="position-toggle-btn" class="control-btn">
 					Показать позицию
 				</button>
@@ -852,7 +851,7 @@
                 
                 if (board) {
                     try {
-                        board.delete();
+                        board.pop();
                     } catch (e) {
                         console.warn('Could not delete old board:', e);
                     }
@@ -1232,7 +1231,7 @@ promotionPieceTypes = nbrqd
             const from = move.includes('@') ? null : move.substring(0, 2);
             const to = move.includes('@') ? move.substring(2) : move.substring(2, 4);
             
-            console.log('makePlayerMove:', {move, currentTurn, playerColor, boardFlipped});
+            console.log('makePlayerMove:', {move, currentTurn, playerColor});
       
 			// ИСПРАВЛЕНИЕ 2: Проверяем, есть ли взятие фигуры
 			let capturedPiece = null;
@@ -1308,7 +1307,7 @@ promotionPieceTypes = nbrqd
             if (!gameReady) return;
             
             const currentTurn = safeBoardCall(() => board.turn(), true);
-            const isComputerTurn = (playerColor === 'white' && !currentTurn && !boardFlipped) || (playerColor === 'black' && currentTurn && boardFlipped);
+            const isComputerTurn = (playerColor === 'white' && !currentTurn) || (playerColor === 'black' && currentTurn);
             
             const isOver = safeBoardCall(() => board.isGameOver(), false);
             if (!isComputerTurn || isOver) return;
@@ -1708,7 +1707,7 @@ promotionPieceTypes = nbrqd
             }
             
             const turn = safeBoardCall(() => board.turn(), true);
-            const isPlayerTurn = (playerColor === 'white' && turn && !boardFlipped) || (playerColor === 'black' && !turn && boardFlipped);
+            const isPlayerTurn = (playerColor === 'white' && turn) || (playerColor === 'black' && !turn);
             const colorName = playerColor === 'white' ? 'белые' : 'чёрные';
             
             const isOver = safeBoardCall(() => board.isGameOver(), false);
@@ -2053,33 +2052,15 @@ promotionPieceTypes = nbrqd
 			}
 			
 			try {
-				board.delete();
-				const newBoard = new ffish.Board('ChessDragon', newFen);
+				board.pop();
+				const newBoard = new ffish.Board('Chess_dragon', newFen);
 				board = newBoard;
 				
-				//originalFen = newFen;
-				
-				// Определяем чей ход из FEN:
-				//const parts = newFen.split(' ')
-				//if (parts.length > 1) {
-					// parts[1] — это 'w' или 'b'
-				//	board.turn() = (parts[1] === 'w') ? true : false
-				//}
-				
+				originalFen = newFen;
 				updateBoard();
 				updateDragonsFromFen(newFen);
 				updateEvaluation();
 				updateStatus();
-				
-				// !!! Дальше — проверяем надо ли отдать ход компьютеру:
-				// Человек играет ТОЙ стороной, которая "внизу" (обычно белые, если не boardFlipped)
-				// Если сейчас компьютер должен ходить, вызови makeComputerMove
-				const turn = board.turn(); // true — белые, false — черные
-				const humanIsWhite = !boardFlipped; // если не boardFlipped — человек белыми
-				const isComputerTurn = (humanIsWhite && !turn) || (!humanIsWhite && turn);
-				if (isComputerTurn) {
-					setTimeout(makeComputerMove, 400);
-				}				
 				
 				const btn = document.getElementById('position-toggle-btn');
 				btn.textContent = 'Скрыть позицию';
@@ -2088,7 +2069,7 @@ promotionPieceTypes = nbrqd
 					togglePositionDisplay();
 				};
 				
-				//alert('✓ Позиция установлена');
+				alert('✓ Позиция установлена');
 			} catch (error) {
 				alert('❌ Ошибка: неверная FEN нотация');
 			}
@@ -2143,17 +2124,20 @@ promotionPieceTypes = nbrqd
             
             const lastState = moveHistory.pop();
 
+			// В функции undoMove() нужно восстанавливать срубленные фигуры
+			// (Для этого нужно сохранять их в moveHistory, но это усложнит код)
+
             try {
-                board.delete();
-                board = new ffish.Board('ChessDragon', lastState.fen);
+                board.pop();
+                board = new ffish.Board('Chess_dragon', lastState.fen);
                 whiteDragons = lastState.whiteDragons;
                 blackDragons = lastState.blackDragons;
                 lastMoveSquares = lastState.lastMoveSquares;
- 
-				// ✅ Восстанавливаем взятые фигуры
+               // ✅ Восстанавливаем взятые фигуры
                 capturedByWhite = lastState.capturedByWhite ? [...lastState.capturedByWhite] : [];
                 capturedByBlack = lastState.capturedByBlack ? [...lastState.capturedByBlack] : [];
-                 
+ 				
+                
                 if (moveHistoryData.length > 0) {
                     const lastMove = moveHistoryData[moveHistoryData.length - 1];
                     if (lastMove.black) {
@@ -2250,209 +2234,7 @@ promotionPieceTypes = nbrqd
 			}
 		});		
 		
-
-        // ✅ АВТОИГРА (ПРОСТАЯ ВЕРСИЯ)
-        window.autoPlayEnabled = false;
-
-        window.toggleAutoPlay = function(){
-            window.autoPlayEnabled = !window.autoPlayEnabled;
-            const btn = document.getElementById('autobtn');
-
-            if (window.autoPlayEnabled) {
-                playerColor = 'none';  // Режим компьютер vs компьютер
-                btn.style.background = '#f44336';
-                btn.textContent = '⏹ Авто';
-                console.log('✅ АВТОИГРА ВКЛЮЧЕНА');
-                autoPlayNextMove();
-            } else {
-                btn.style.background = '#4CAF50';
-                btn.textContent = '🐉 Автоигра';
-                console.log('🛑 АВТОИГРА ВЫКЛЮЧЕНА');
-            }
-        }
-
-        function autoPlayNextMove() {
-            if (!window.autoPlayEnabled) return;
-
-            try {
-                // Проверяем конец игры
-                const isGameOver = safeBoardCall(() => board.isGameOver(), false);
-                if (isGameOver) {
-                    window.autoPlayEnabled = false;
-                    document.getElementById('autobtn').style.background = '#4CAF50';
-                    document.getElementById('autobtn').textContent = '🐉 Автоигра';
-                    console.log('⏹ Игра окончена');
-                    return;
-                }
-
-                // Делаем ход компьютера
-                makeComputerMove().then(() => {
-                    console.log('✓ Ход выполнен');
-                    if (window.autoPlayEnabled) {
-                        setTimeout(autoPlayNextMove, 1000);
-                    }
-                }).catch(e => {
-                    console.error('Ошибка хода:', e);
-                    window.autoPlayEnabled = false;
-                });
-            } catch(e) {
-                console.error('Ошибка авто-игры:', e);
-                window.autoPlayEnabled = false;
-            }
-        }
-
-    
-        // ✅ ОЧЕНЬ ПОДРОБНОЕ ЛОГИРОВАНИЕ FEN ОШИБОК
-        function isValidFEN(fen) {
-            if (!fen || typeof fen !== 'string') {
-                console.error('❌ FEN не строка или пуста');
-                return false;
-            }
-
-            let fullFen = fen.trim();
-            let pocket = '';
-
-            console.log('📋 Проверяем FEN:', fullFen);
-            console.log('📍 Длина FEN:', fullFen.length, 'символов');
-
-            // Ищем карман [...]
-            const pocketMatch = fullFen.match(/\[([a-zA-Z]*)\]/);
-            if (pocketMatch) {
-                pocket = pocketMatch[1];
-                console.log('📦 Найден карман: [' + pocket + ']');
-                fullFen = fullFen.replace(pocketMatch[0], '');
-                console.log('📋 FEN без кармана:', fullFen);
-            } else {
-                console.log('📦 Карман не найден (стандартные шахматы)');
-            }
-
-            const parts = fullFen.trim().split(/\s+/);
-            console.log('📊 Части FEN:', parts);
-            console.log('📊 Количество частей:', parts.length);
-
-            if (parts.length !== 6) {
-                console.error('❌ ОШИБКА: Должно быть 6 частей, найдено:', parts.length);
-                console.log('   Должно быть: board turn castling enpassant halfmove fullmove');
-                console.log('   Получено:', parts);
-                return false;
-            }
-
-            const [board, turn, castling, enPassant, halfmove, fullmove] = parts;
-
-            // Проверяем доску
-            console.log('\n🔍 Проверяем ДОСКУ:', board);
-            const rows = board.split('/');
-            console.log('   Рядов:', rows.length, '(должно быть 8)');
-            if (rows.length !== 8) {
-                console.error('❌ ОШИБКА в доске: неверное количество рядов');
-                return false;
-            }
-            console.log('✅ Доска OK');
-
-            // Проверяем turn
-            console.log('\n🔍 Проверяем TURN:', turn);
-            if (!/^[wb]$/.test(turn)) {
-                console.error('❌ ОШИБКА: turn должен быть w или b, получено:', turn);
-                return false;
-            }
-            console.log('✅ Turn OK');
-
-            // Проверяем castling
-            console.log('\n🔍 Проверяем CASTLING:', castling);
-            if (!/^(-|K?Q?k?q?)$/.test(castling)) {
-                console.error('❌ ОШИБКА: castling должен быть - или KQkq, получено:', castling);
-                return false;
-            }
-            console.log('✅ Castling OK');
-
-            // Проверяем enPassant
-            console.log('\n🔍 Проверяем EN PASSANT:', enPassant);
-            if (!/^(-|[a-h][36])$/.test(enPassant)) {
-                console.error('❌ ОШИБКА: enPassant должен быть - или e3, получено:', enPassant);
-                return false;
-            }
-            console.log('✅ EnPassant OK');
-
-            // Проверяем halfmove
-            console.log('\n🔍 Проверяем HALFMOVE:', halfmove);
-            if (!/^\d+$/.test(halfmove)) {
-                console.error('❌ ОШИБКА: halfmove должно быть число, получено:', halfmove);
-                return false;
-            }
-            console.log('✅ Halfmove OK');
-
-            // Проверяем fullmove
-            console.log('\n🔍 Проверяем FULLMOVE:', fullmove);
-            if (!/^\d+$/.test(fullmove)) {
-                console.error('❌ ОШИБКА: fullmove должно быть число, получено:', fullmove);
-                return false;
-            }
-            console.log('✅ Fullmove OK');
-
-            // Проверяем карман
-            if (pocket) {
-                console.log('\n🔍 Проверяем КАРМАН: [' + pocket + ']');
-                if (!/^[pnbrqkPNBRQK]*$/.test(pocket)) {
-                    console.error('❌ ОШИБКА: карман содержит недопустимые символы');
-                    console.log('   Допустимые: p n b r q k P N B R Q K');
-                    console.log('   Получено:', pocket);
-                    return false;
-                }
-                console.log('✅ Карман OK');
-            }
-
-            console.log('\n✅✅✅ FEN ВАЛИДНА! ✅✅✅');
-            return true;
-        }
-
-        function loadFENPosition(fen) {
-            try {
-                console.log('\n' + '='.repeat(50));
-                console.log('ЗАГРУЗКА FEN ПОЗИЦИИ');
-                console.log('='.repeat(50));
-                console.log('📋 FEN:', fen);
-
-                if (!isValidFEN(fen)) {
-                    console.error('\n❌ FEN НЕ ПРОШЛА ВАЛИДАЦИЮ!');
-                    alert('❌ ОШИБКА: Неверная FEN нотация!\n\n' +
-                        'Откройте Console (F12) чтобы увидеть детали ошибки.');
-                    return false;
-                }
-
-                // Удаляем карман для board.load()
-                let cleanFen = fen.trim();
-                const pocketMatch = cleanFen.match(/\[([a-zA-Z]*)\]/);
-                if (pocketMatch) {
-                    cleanFen = cleanFen.replace(pocketMatch[0], '');
-                }
-
-                console.log('\n🎮 Загружаем в board.load():', cleanFen);
-
-                const result = safeBoardCall(() => {
-                    board.load(cleanFen);
-                    return true;
-                }, false);
-
-                if (result) {
-                    console.log('✅ board.load() выполнена успешно!');
-                    updateBoard();
-                    console.log('✅ Доска обновлена на экране!');
-                    console.log('\n🎉 ПОЗИЦИЯ ЗАГРУЖЕНА!\n');
-                    return true;
-                } else {
-                    console.error('❌ board.load() вернула false');
-                    alert('❌ Ошибка: board.load() не выполнилась!');
-                    return false;
-                }
-            } catch(e) {
-                console.error('\n❌ ИСКЛЮЧЕНИЕ:', e.message);
-                console.error('Stack:', e.stack);
-                alert('❌ ОШИБКА: ' + e.message);
-                return false;
-            }
-        }
-
-</script>
+    </script>
 	
 </body>
 </html>
