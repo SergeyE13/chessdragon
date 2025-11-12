@@ -379,7 +379,7 @@ app.get('/api/sessions/active', (req, res) => {
 const handleBestMove = async (req, res) => {
     console.log('📩 Received FEN:', req.body.fen);
     
-    const { fen, depth = 10, elo = 1350} = req.body;
+    const { fen, depth = 10, level = 20} = req.body;
     
     if (!fen) {
         return res.status(400).json({ error: 'FEN is required' });
@@ -398,8 +398,7 @@ const handleBestMove = async (req, res) => {
             'uci',
             `setoption name VariantPath value ${path.join(__dirname, 'variants', 'chessdragon.ini')}`,
             'setoption name UCI_Variant value chessdragon',
-			'setoption name UCI_LimitStrength value true',
-			`setoption name UCI_Elo value ${elo}`,
+			`setoption name Skill Level value ${level}`,
             `position fen ${fen}`,
             `go depth ${depth}`
         ];

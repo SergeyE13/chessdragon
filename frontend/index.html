@@ -133,7 +133,8 @@
             font-size: 50px;
             line-height: 1;
             text-shadow: 0 0 2px rgba(0,0,0,0.3);
-            z-index: 1;
+			  z-index: 1;			
+			
         }
 
         .controls {
@@ -698,13 +699,14 @@
             <div class="control-group">
                 <h3>Уровень</h3>
 				<select id="difficulty" onchange="setDifficulty(this.value)">
-					<option value="1">Уровень 1 (800)</option>
-					<option value="2">Уровень 2 (1000)</option>
-					<option value="3">Уровень 3 (1200)</option>
-					<option value="4" selected>Уровень 4 (1400)</option>
-					<option value="5">Уровень 5 (1600)</option>
-					<option value="6">Уровень 6 (1800)</option>
-					<option value="7">Уровень 7 (2000)</option>
+					<option value="1">Уровень 0 (1000)</option>
+					<option value="1" selected>Уровень 1 (1300)</option>
+					<option value="2">Уровень 2 (1500)</option>
+					<option value="3">Уровень 3 (1700)</option>
+					<option value="4">Уровень 4 (2000)</option>
+					<option value="5">Уровень 5 (2200)</option>
+					<option value="6">Уровень 6 (2400)</option>
+					<option value="7">Уровень 7 (2600)</option>
 					<option value="8">Уровень 8 (2850)</option>					
 				</select>			
             </div>
@@ -813,14 +815,15 @@
 			};
 		
 		const difficultySettings = {
-			1: { depth: 1, elo: 500 },
-			2: { depth: 2, elo: 1000},
-			3: { depth: 3, elo: 1200},
-			4: { depth: 4, elo: 1400},
-			5: { depth: 5, elo: 1600},
-			6: { depth: 6, elo: 1800},
-			7: { depth: 7, elo: 2000},
-			8: { depth: 8, elo: 2850}			
+			0: { depth: 1, level: 0 },		
+			1: { depth: 1, level: 1 },
+			2: { depth: 2, level: 2 },
+			3: { depth: 3, level: 4 },
+			4: { depth: 4, level: 7 },
+			5: { depth: 5, level: 10 },
+			6: { depth: 6, level: 13 },
+			7: { depth: 7, level: 17 },
+			8: { depth: 8, level: 20 }			
 		};		
 
         function safeBoardCall(callback, defaultValue = null) {
@@ -926,14 +929,14 @@ promotionPieceTypes = nbrqd
 			return new Promise(resolve => requestIdleCallback(resolve, { timeout: 16 }));
 		}
 
-		async function getBestMoveFromEngine(fen, depth, elo) {
+		async function getBestMoveFromEngine(fen, depth, level) {
 			try {
 				console.log('Using Fairy-Stockfish engine...');
 				const response = await fetch(`${API_URL}/get-best-move`, {
 					method: 'POST',
 					credentials: 'include', // ← ЭТО КРИТИЧНО!						
 					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ fen, depth, elo})
+					body: JSON.stringify({ fen, depth, level})
 				});
 				
 				if (!response.ok) {
@@ -1058,9 +1061,9 @@ promotionPieceTypes = nbrqd
                 }
                 
                 const depth = difficultySettings[currentDifficulty].depth;
-                const elo   = difficultySettings[currentDifficulty].elo;
+                const level   = difficultySettings[currentDifficulty].level;
                 const startTime = Date.now();
-                const result = await getBestMoveFromEngine(fen, depth, elo);
+                const result = await getBestMoveFromEngine(fen, depth, level);
                 const elapsed = Date.now() - startTime;
              
 				if (result.info) {
