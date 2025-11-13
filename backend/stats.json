@@ -1193,7 +1193,7 @@
     },
     "2025-11-12": {
       "date": "2025-11-12",
-      "totalRequests": 177,
+      "totalRequests": 182,
       "uniqueIPs": [
         "::ffff:172.104.241.92",
         "::ffff:111.7.96.163",
@@ -1201,7 +1201,8 @@
         "::ffff:20.46.246.132",
         "::ffff:54.221.130.220",
         "::ffff:165.154.232.110",
-        "::ffff:172.25.43.80"
+        "::ffff:172.25.43.80",
+        "::ffff:198.235.24.206"
       ],
       "sessions": [
         {
@@ -2367,6 +2368,91 @@
               "method": "GET",
               "url": "/favicon.ico",
               "timestamp": "2025-11-12T17:37:32.336Z"
+            }
+          ]
+        },
+        {
+          "id": "::1_1762972847958_jj8u54tue",
+          "ip": "::1",
+          "startTime": "2025-11-12T18:40:47.958Z",
+          "endTime": "2025-11-12T18:41:05.924Z",
+          "requestCount": 4,
+          "requests": [
+            {
+              "method": "POST",
+              "url": "/get-best-move",
+              "timestamp": "2025-11-12T18:40:47.958Z",
+              "fen": "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR[DDdd] b KQkq - 0 1"
+            },
+            {
+              "method": "POST",
+              "url": "/get-best-move",
+              "timestamp": "2025-11-12T18:40:53.615Z",
+              "fen": "rnbqkbnr/ppp1pppp/8/3P4/8/8/PPPP1PPP/RNBQKBNR[DDdd] b KQkq - 0 2"
+            },
+            {
+              "method": "POST",
+              "url": "/get-best-move",
+              "timestamp": "2025-11-12T18:40:58.932Z",
+              "fen": "rnbqkb1r/ppp1pppp/3P1n2/8/8/8/PPPP1PPP/RNBQKBNR[DDdd] b KQkq - 0 3"
+            },
+            {
+              "method": "POST",
+              "url": "/get-best-move",
+              "timestamp": "2025-11-12T18:41:05.924Z",
+              "fen": "r1bqkb1r/ppP1pppp/2n2n2/8/8/8/PPPP1PPP/RNBQKBNR[DDdd] b KQkq - 0 4"
+            }
+          ]
+        },
+        {
+          "id": "::ffff:198.235.24.206_1762980662267_93q565jgo",
+          "ip": "::ffff:198.235.24.206",
+          "startTime": "2025-11-12T20:51:02.267Z",
+          "endTime": "2025-11-12T20:51:02.267Z",
+          "requestCount": 1,
+          "requests": [
+            {
+              "method": "GET",
+              "url": "/",
+              "timestamp": "2025-11-12T20:51:02.267Z"
+            }
+          ]
+        }
+      ]
+    },
+    "2025-11-13": {
+      "date": "2025-11-13",
+      "totalRequests": 2,
+      "uniqueIPs": [
+        "::ffff:198.235.24.179",
+        "::ffff:91.239.216.8"
+      ],
+      "sessions": [
+        {
+          "id": "::ffff:198.235.24.179_1763002627359_n8jb9xwkp",
+          "ip": "::ffff:198.235.24.179",
+          "startTime": "2025-11-13T02:57:07.359Z",
+          "endTime": "2025-11-13T02:57:07.359Z",
+          "requestCount": 1,
+          "requests": [
+            {
+              "method": "GET",
+              "url": "/",
+              "timestamp": "2025-11-13T02:57:07.359Z"
+            }
+          ]
+        },
+        {
+          "id": "::ffff:91.239.216.8_1763013773522_s4gyzgtna",
+          "ip": "::ffff:91.239.216.8",
+          "startTime": "2025-11-13T06:02:53.522Z",
+          "endTime": "2025-11-13T06:02:53.522Z",
+          "requestCount": 1,
+          "requests": [
+            {
+              "method": "GET",
+              "url": "/",
+              "timestamp": "2025-11-13T06:02:53.522Z"
             }
           ]
         }

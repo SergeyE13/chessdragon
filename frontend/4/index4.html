@@ -199,18 +199,6 @@
 			opacity: 1;
 		}		
 
-        /* Выделение подсказки */
-        .square.hint-move::after {
-            content: '';
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            border: 3px solid rgba(46, 204, 113, 0.9);
-            box-sizing: border-box;
-            pointer-events: none;
-            background: rgba(46, 204, 113, 0.15);
-        }
-
         button {
             width: 100%;
             padding: 6px;
@@ -692,9 +680,6 @@
                 <button onclick="flipBoard()">Сменить цвет</button>
                 <button onclick="undoMove()">Отменить ход</button>
                 <button id="autobtn" onclick="toggleAutoPlay()" style="background:#3498db;color:white;padding:6px 12px;border:none;border-radius:8px;cursor:pointer;font-weight:bold;">🐉 Автоигра</button>
-				<div class="control-group">
-					<button id="hint-btn" onclick="toggleHint()" style="background:#3498db;color:white;padding:6px 12px;border:none;border-radius:8px;cursor:pointer;font-weight:bold;width:100%;margin-bottom:8px;">💡 Подсказка</button>
-				</div>
 				<button onclick="togglePositionDisplay()" id="position-toggle-btn" class="control-btn">
 					Показать позицию
 				</button>			
@@ -710,8 +695,7 @@
 				</div>
 				
             </div>
-
-
+            
             <div class="control-group">
                 <h3>Уровень</h3>
 				<select id="difficulty" onchange="setDifficulty(this.value)">
@@ -810,9 +794,6 @@
         let board = null;
         let ffish = null;
         let gameReady = false;
-
-        let hintEnabled = false;
-        let hintMove = null;
         let playerColor = 'white';
         let boardFlipped = false;
         let lastMoveSquares = { from: null, to: null };
@@ -1042,11 +1023,6 @@ promotionPieceTypes = nbrqd
             updatePockets();
 			updateCapturedPieces();  		
             updateEvaluation();
-
-            // Убираем подсказку когда ходит игрок
-            if (hintEnabled) {
-                clearHintHighlight();
-            }
 			updatePositionDisplay();
             
             const notation = formatMoveNotation(move, fenBefore);
@@ -1061,64 +1037,6 @@ promotionPieceTypes = nbrqd
             }
             
             setTimeout(() => makeComputerMove(), 100);
-        }
-
-        window.toggleHint = async function () {
-            const hintBtn = document.getElementById('hint-btn');
-            if (hintEnabled) {
-                hintEnabled = false;
-                hintMove = null;
-                hintBtn.style.background = '#3498db';
-                clearHintHighlight();
-                console.log('🔕 Подсказка отключена');
-            } else {
-                hintEnabled = true;
-                hintBtn.style.background = '#27ae60';
-				getHintMove();				
-                console.log('💡 Подсказка активирована');
-            }
-        }
-
-        async function getHintMove() {
-            if (!hintEnabled || !gameReady) return;
-            try {
-                const fen = safeBoardCall(() => board.fen(), '');
-                if (!fen) return;
-                const depth = 6;
-                const level = 20;
-                console.log('🔍 Получаем подсказку от движка...');
-                const result = await getBestMoveFromEngine(fen, depth, level);
-                if (result && result.move) {
-                    hintMove = {
-                        from: result.move.includes('@') ? null : result.move.substring(0, 2),
-                        to: result.move.includes('@') ? result.move.substring(2) : result.move.substring(2, 4),
-                        fullMove: result.move
-                    };
-                    console.log('💡 Подсказка получена:', hintMove);
-                    highlightHintMove();
-                }
-            } catch (error) {
-                console.error('❌ Ошибка при получении подсказки:', error);
-            }
-        }
-
-        function highlightHintMove() {
-            clearHintHighlight();
-            if (!hintMove || !hintEnabled) return;
-            if (hintMove.from) {
-                const fromEl = document.querySelector('[data-square="' + hintMove.from + '"]');
-                if (fromEl) fromEl.classList.add('hint-move');
-            }
-            if (hintMove.to) {
-                const toEl = document.querySelector('[data-square="' + hintMove.to + '"]');
-                if (toEl) toEl.classList.add('hint-move');
-            }
-        }
-
-        function clearHintHighlight() {
-            document.querySelectorAll('.square.hint-move').forEach(el => {
-                el.classList.remove('hint-move');
-            });
         }
 
         async function makeComputerMove() {
@@ -1208,12 +1126,6 @@ promotionPieceTypes = nbrqd
                 updatePockets();
 				updateCapturedPieces(); 				
                 updateEvaluation();
-
-                // Показываем подсказку если она активна
-                if (hintEnabled) {
-                    await sleepFrame();
-                    await getHintMove();
-                }
 				updatePositionDisplay();
                 
                 const notation = formatMoveNotation(move, fenBefore);
