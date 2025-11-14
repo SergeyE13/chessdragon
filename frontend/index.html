@@ -130,7 +130,8 @@
         }
 
         .piece {
-            font-size: 50px;
+			font-family: 'DejaVu Sans', 'Segoe UI Symbol', 'Lucida Grande', Arial, sans-serif;
+		    font-size: 50px;
             line-height: 1;
             text-shadow: 0 0 2px rgba(0,0,0,0.3);
 			  z-index: 1;			
@@ -547,6 +548,12 @@
 		
 		/*--блок для телефона--*/
 		@media (max-width: 480px) {
+			
+			.piece {
+				font-family: -apple-system, 'San Francisco', 'Segoe UI', Arial, sans-serif;				
+			    font-size: 38px;
+            }
+			
 			.captured-pieces-container {
 				margin: 3px 0;
 			}
@@ -590,14 +597,14 @@
             }
 
 			.game-board {
-            background: white;
-            border-radius: 15px;
-            padding: 35px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
+				background: white;
+				border-radius: 15px;
+				padding: 35px;
+				box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+			}
             
             #board {
                 grid-template-columns: repeat(8, 45px);
@@ -605,7 +612,8 @@
             }
             
             .piece {
-                font-size: 38px;
+				font-family: -apple-system, 'San Francisco', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+			    font-size: 38px;
             }
 
 			.pockets {
@@ -688,13 +696,17 @@
     <div class="container">
         <div class="controls">
             <div class="control-group">
-                <button onclick="newGame()">Новая игра</button>
-                <button onclick="flipBoard()">Сменить цвет</button>
-                <button onclick="undoMove()">Отменить ход</button>
-                <button id="autobtn" onclick="toggleAutoPlay()" style="background:#3498db;color:white;padding:6px 12px;border:none;border-radius:8px;cursor:pointer;font-weight:bold;">🐉 Автоигра</button>
 				<div class="control-group">
+					<button onclick="newGame()">Новая игра</button>
+					<button onclick="flipBoard()">Сменить цвет</button>
+					<button onclick="undoMove()">Отменить ход</button>
+				</div>
+
+				<div class="control-group">
+					<button id="autobtn" onclick="toggleAutoPlay()" style="background:#3498db;color:white;padding:6px 12px;border:none;border-radius:8px;cursor:pointer;font-weight:bold;">🐉 Автоигра</button>
 					<button id="hint-btn" onclick="toggleHint()" style="background:#3498db;color:white;padding:6px 12px;border:none;border-radius:8px;cursor:pointer;font-weight:bold;width:100%;margin-bottom:8px;">💡 Подсказка</button>
 				</div>
+				
 				<button onclick="togglePositionDisplay()" id="position-toggle-btn" class="control-btn">
 					Показать позицию
 				</button>			
@@ -1639,12 +1651,17 @@ promotionPieceTypes = nbrqd
 				console.warn('Error checking position:', e);
 			}			
 			
-			
-			////
-			
 			if (move.includes('@')) {
 				// ✅ ХОДЫ ДРАКОНОВ
-				const piece = move[0] === 'D' ? '♤' : '♠';
+				let isWhiteTurn = true;
+				try {
+					const fenParts = fenBefore.split(' ');
+					isWhiteTurn = fenParts[1] === 'w';  // Проверяем цвет из FEN
+				} catch(e) {}
+
+				const piece = isWhiteTurn ? '♤' : '♠';				
+				//const piece = move[0] === 'D' ? '♤' : '♠';
+				
 				const square = move.substring(2);
 				
 				// Проверяем взятие
@@ -1701,21 +1718,6 @@ promotionPieceTypes = nbrqd
 			
 			return notation;
 		}
-
-        function formatMoveNotation2(move, fenBefore) {
-            if (move.includes('@')) {
-                const piece = move[0] === 'D' ? '♤' : '♠';
-                const square = move.substring(2);
-                return `${piece}@${square}`;
-            }
-            
-            const from = move.substring(0, 2);
-            const to = move.substring(2, 4);
-            const piece = getPieceAtSquare(fenBefore, from);
-            const symbol = piece ? getPieceSymbol(piece) : '';
-            
-            return `${symbol}${from}-${to}`;
-        }
 
         function getMoveNumber() {
             const fen = safeBoardCall(() => board.fen(), '');
